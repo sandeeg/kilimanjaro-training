@@ -786,6 +786,128 @@
       '</div></div>';
   }
 
+
+  /* ---------- flights ---------- */
+
+  function pnrFor(booking) {
+    var saved = Store.getPnr(booking.pnrKey);
+    return saved
+      ? { text: saved, real: true }
+      : { text: booking.pnrMask || '\u2022\u2022\u2022\u2022\u2022\u2022', real: false };
+  }
+
+  /* Real elapsed time, which is not what the clock times suggest: Seattle is 11
+     hours behind Istanbul in December, so a flight landing "the next day" can be
+     shorter than one landing the same day. */
+  function flightDuration(seg, airports) {
+    var oFrom = airports[seg.from].utcOffset;
+    var oTo   = airports[seg.to].utcOffset;
+    var d1 = Schedule.parseISO(seg.depDate);
+    var d2 = Schedule.parseISO(seg.arrDate);
+    var t1 = seg.dep.split(':'), t2 = seg.arr.split(':');
+    var a = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate(), +t1[0] - oFrom, +t1[1]);
+    var b = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate(), +t2[0] - oTo, +t2[1]);
+    var mins = Math.round((b - a) / 60000);
+    return Math.floor(mins / 60) + 'h ' + String(mins % 60).padStart(2, '0');
+  }
+
+  function renderFlights() {
+    var f = CFG.flights;
+    if (!f) { $('flightsSub').textContent = ''; $('flights').innerHTML = ''; return; }
+
+    var anyReal = f.bookings.some(function (b) { return pnrFor(b).real; });
+
+    $('flightsSub').innerHTML =
+      esc(f.airline) + '. Source: ' + esc(f.source) + '. ' +
+      (anyReal
+        ? 'Reservation codes are saved in this browser only \u2014 never in the repo.'
+        : 'Reservation codes are deliberately not published. Type yours in below and ' +
+          'they stay in this browser.');
+
+    var fmt = function (iso) {
+      var d = Schedule.parseISO(iso);
+      return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    };
+
+    $('flights').innerHTML = f.bookings.map(function (b) {
+      var p = pnrFor(b);
+      return '<div class="flight">' +
+        '<div class="flight__head">' +
+          '<span class="flight__label">' + esc(b.label) + '</span>' +
+          '<span class="flight__pnr' + (p.real ? '' : ' flight__pnr--masked') + '">' +
+            '<label class="sr-only" for="pnr-' + esc(b.pnrKey) + '">' +
+              'Reservation code for ' + esc(b.label) + '</label>' +
+            '<input id="pnr-' + esc(b.pnrKey) + '" class="pnrinput" type="text"' +
+              ' maxlength="8" spellcheck="false" autocomplete="off"' +
+              ' data-pnr="' + esc(b.pnrKey) + '"' +
+              ' placeholder="' + esc(p.text) + '"' +
+              ' value="' + (p.real ? esc(p.text) : '') + '">' +
+          '</span>' +
+        '</div>' +
+        b.segments.map(function (s) {
+          var overnight = s.arrDate !== s.depDate;
+          return '<div class="seg">' +
+            '<div class="seg__port">' +
+              '<b>' + esc(s.from) + '</b><span>' + esc(s.dep) + '</span>' +
+              '<em>' + esc(fmt(s.depDate)) + '</em>' +
+            '</div>' +
+            '<div class="seg__line" aria-hidden="true">' +
+              '<span class="seg__dur">' + flightDuration(s, f.airports) + '</span>' +
+            '</div>' +
+            '<div class="seg__port seg__port--to">' +
+              '<b>' + esc(s.to) + '</b><span>' + esc(s.arr) +
+                (overnight ? ' <em class="seg__next">+1</em>' : '') + '</span>' +
+              '<em>' + esc(fmt(s.arrDate)) + '</em>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }).join('') +
+    '<p class="week__note" style="margin-top:12px"><b>Note:</b> ' + esc(f.note) + '</p>' +
+    flightTimeline();
+  }
+
+  /* How the flights sit around the trek — the bit that actually matters. */
+  function flightTimeline() {
+    var f = CFG.flights;
+    var segs = [];
+    f.bookings.forEach(function (b) { b.segments.forEach(function (s) { segs.push(s); }); });
+
+    var arrive = segs.filter(function (s) { return s.to === 'JRO'; })[0];
+    var leave  = segs.filter(function (s) { return s.from === 'JRO'; })[0];
+    if (!arrive || !leave) return '';
+
+    var trekStart = Schedule.parseISO(CFG.trek.startDate);
+    var trekEnd   = Schedule.parseISO(CFG.trek.endDate);
+    var landed    = Schedule.parseISO(arrive.arrDate);
+    var out       = Schedule.parseISO(leave.depDate);
+
+    var buffer = Schedule.daysBetween(landed, trekStart);
+    var after  = Schedule.daysBetween(trekEnd, out);
+
+    return '<div class="milestone" style="margin-top:12px">' +
+      '<span class="milestone__icon" aria-hidden="true">\u25c6</span><div>' +
+      '<b>Land ' + Schedule.fmtShort(landed) + ' at ' + esc(arrive.arr) + ', trek starts ' +
+        Schedule.fmtShort(trekStart) + '</b>' +
+      '<span>' +
+        (buffer <= 0
+          ? 'That leaves no rest day at all \u2014 check this with Altezza.'
+          : buffer === 1
+            ? 'One day on the ground before Day 1: enough for the gear check and a proper ' +
+              'sleep, but nothing spare if a bag goes missing.'
+            : buffer + ' days on the ground before Day 1.') +
+        ' After the mountain there are ' + after + ' days in Tanzania before the ' +
+        Schedule.fmtShort(out) + ' flight home.' +
+      '</span></div></div>';
+  }
+
+  function initFlightEvents() {
+    $('flights').addEventListener('change', function (e) {
+      var key = e.target.getAttribute && e.target.getAttribute('data-pnr');
+      if (key) Store.setPnr(key, e.target.value);
+    });
+  }
+
   /* ---------- export / import / reset ---------- */
 
   function download(filename, text) {
@@ -855,6 +977,7 @@
     renderHikes();
     renderPacking();
     renderItinerary();
+    renderFlights();
   }
 
   function init() {
@@ -871,6 +994,7 @@
     initHikeEvents();
     initPackingEvents();
     initDataEvents();
+    initFlightEvents();
     renderAll();
 
     // any save re-renders everything that depends on it
@@ -880,6 +1004,7 @@
       renderCalendar();
       renderHikes();
       renderPacking();
+      renderFlights();
     });
   }
 

@@ -100,7 +100,18 @@ stays on the card so nobody forgets.
 - **Hike library** — every hike, sortable by tier. Add your own.
 - **Packing list** — the full Altezza list, transcribed from their PDF, with a separate
   checklist per person and the day-by-day layering for the mountain.
-- **The trek** — altitude profile and day-by-day, including the climb-high-sleep-low day.
+- **The trek** — altitude profile and day-by-day, including the climb-high-sleep-low day,
+  plus the flights and how they sit around the trek.
+
+## Reservation codes
+
+The flight dates, times and airports are in `data/config.js`. **The booking references are
+not**, on purpose: a reservation code plus a surname is usually all an airline asks for to
+view or change a booking, and this repo is public.
+
+Instead, type them into the boxes on the **The trek** tab. They're saved in your browser
+alongside your hike ticks, and never become part of the site's files. Each person enters
+their own; nothing is shared unless you deliberately send someone your Export file.
 
 ## Where your ticks are saved
 

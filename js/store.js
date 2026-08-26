@@ -14,7 +14,8 @@ var Store = (function () {
     packing:  {},   // "p1": { "Footwear::Trekking boots (…)": true }
     hikes:    [],   // user-added hikes
     theme:    null, // "light" | "dark" | null (follow the OS)
-    defaultDay: null // 0=Mon … 6=Sun. null = use config.training.primaryDay
+    defaultDay: null, // 0=Mon … 6=Sun. null = use config.training.primaryDay
+    pnrs:     {}    // "seaIst": "ABC123" — see setPnr
   };
 
   function read() {
@@ -110,6 +111,20 @@ var Store = (function () {
 
     /* ---- theme ---- */
     setTheme: function (t) { data.theme = t; save(); },
+
+    /* ---- airline reservation codes ----
+       Kept in this browser and NOWHERE else. A booking reference plus a surname
+       is usually all an airline asks for to view or change a reservation, so
+       these must never end up in the repo — it's public. Each person enters
+       their own; Export carries them only if they choose to share the file. */
+    getPnr: function (key) { return (data.pnrs && data.pnrs[key]) || ''; },
+
+    setPnr: function (key, value) {
+      if (!data.pnrs) data.pnrs = {};
+      var v = String(value || '').trim().toUpperCase();
+      if (v) data.pnrs[key] = v; else delete data.pnrs[key];
+      save();
+    },
 
     /* ---- which day of the week you hike ----
        0 = Monday … 6 = Sunday. Set globally here, or per weekend via

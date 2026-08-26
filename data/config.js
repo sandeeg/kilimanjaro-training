@@ -180,6 +180,58 @@ window.TREK_CONFIG = {
       notes: "3–5 miles only. Nothing new." }
   ],
 
+
+  /* ---- FLIGHTS ----------------------------------------------------------
+     From Ramita's airline app (screenshot, 12 Aug 2026). Seattle - Istanbul -
+     Kilimanjaro and back. All four weekday labels in the screenshot match the
+     real 2026/2027 calendar, so unlike the training document these dates need
+     no correcting.
+
+     RESERVATION CODES ARE NOT STORED HERE. A booking reference plus a surname
+     is all most airlines ask for to view or change a booking, and this repo is
+     public. Put the real codes in data/private.js, which is gitignored - the
+     site shows them when that file is present and shows a masked stub when it
+     isn't. See the README.
+
+     Airline is INFERRED from the SEA-IST-JRO routing; the screenshot doesn't
+     name it. utcOffset values are for December/January.                     */
+  flights: {
+    source: "Ramita's airline app, 12 Aug 2026",
+    airline: "Turkish Airlines (inferred from the routing \u2014 confirm)",
+    note: "The two halves are SEPARATE bookings. If the Seattle flight runs late " +
+          "the airline is not obliged to protect the Kilimanjaro leg, though the " +
+          "23-hour Istanbul stop makes that very unlikely to bite.",
+
+    airports: {
+      SEA: { name: "Seattle\u2013Tacoma International", city: "Seattle", utcOffset: -8 },
+      IST: { name: "Istanbul Airport",                  city: "Istanbul", utcOffset: 3 },
+      JRO: { name: "Kilimanjaro International",         city: "Moshi / Arusha", utcOffset: 3 }
+    },
+
+    bookings: [
+      {
+        pnrKey: "seaIst", pnrMask: "VM\u2022\u2022\u2022\u2022",
+        label: "Seattle \u2194 Istanbul",
+        segments: [
+          { from: "SEA", to: "IST", depDate: "2026-12-21", dep: "19:05",
+            arrDate: "2026-12-22", arr: "18:05", dir: "out" },
+          { from: "IST", to: "SEA", depDate: "2027-01-06", dep: "15:35",
+            arrDate: "2027-01-06", arr: "17:10", dir: "back" }
+        ]
+      },
+      {
+        pnrKey: "istJro", pnrMask: "TQ\u2022\u2022\u2022\u2022",
+        label: "Istanbul \u2194 Kilimanjaro",
+        segments: [
+          { from: "IST", to: "JRO", depDate: "2026-12-23", dep: "17:10",
+            arrDate: "2026-12-24", arr: "00:15", dir: "out" },
+          { from: "JRO", to: "IST", depDate: "2027-01-04", dep: "05:55",
+            arrDate: "2027-01-04", arr: "13:30", dir: "back" }
+        ]
+      }
+    ]
+  },
+
   /* ---- HIKES ALREADY DONE ------------------------------------------------
      Training done outside the planned weekends — earlier in the summer, or on
      days that don't line up with the schedule. These count towards the totals

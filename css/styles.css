@@ -418,6 +418,70 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .week__day select { flex: none; }
 .week__day .hint { font-size: 11.5px; }
 
+.flight {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.flight__head {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.flight__label { font-weight: 600; font-size: 13.5px; }
+.flight__pnr {
+  margin-left: auto;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12.5px; letter-spacing: 0.06em;
+  color: var(--text-primary);
+}
+.flight__pnr--masked { color: var(--text-muted); }
+
+.pnrinput {
+  width: 9ch;
+  padding: 3px 7px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px dashed var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+}
+.pnrinput:focus { border-style: solid; border-color: var(--series-1); outline: none; }
+.pnrinput::placeholder { color: var(--text-muted); letter-spacing: 0.08em; }
+
+.seg {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+}
+.seg + .seg { border-top: 1px solid var(--grid); }
+
+.seg__port { display: flex; flex-direction: column; min-width: 66px; }
+.seg__port--to { text-align: right; align-items: flex-end; }
+.seg__port b { font-size: 15px; letter-spacing: 0.02em; }
+.seg__port span { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.seg__port em { font-size: 11.5px; font-style: normal; color: var(--text-muted); }
+.seg__next { color: var(--series-2); font-weight: 700; font-size: 10.5px; }
+
+.seg__line {
+  position: relative;
+  border-top: 2px solid var(--axis);
+  text-align: center;
+}
+.seg__dur {
+  position: relative; top: -9px;
+  background: var(--surface-1);
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- Controls ---------- */
 
 select, input[type="text"], input[type="number"], input[type="url"], textarea {
