@@ -195,6 +195,23 @@ window.TREK_CONFIG = {
 
      Airline is INFERRED from the SEA-IST-JRO routing; the screenshot doesn't
      name it. utcOffset values are for December/January.                     */
+  hotels: {
+    istanbul: {
+      name: "The Ritz-Carlton, Istanbul",
+      address: "Suzer Plaza, Askerocagi Caddesi, No:6, 34367 Elmada/Sisl Istanbul 34367 Turkiye",
+      phone: "+90-212-334-4444",
+      checkInDate: "2026-12-22",
+      checkInTime: "15:00",
+      checkOutDate: "2026-12-23",
+      checkOutTime: "12:00",
+      roomType: "King Partial Bosporus (1 King, Partial sea view)",
+      guests: "2 Adults",
+      nights: 1,
+      confirmationMask: "••••••••",
+      note: "One night stop in Istanbul between flights. Confirmation reference stored locally in browser for privacy."
+    }
+  },
+
   flights: {
     source: "Ramita's airline app, 12 Aug 2026",
     airline: "Turkish Airlines (inferred from the routing \u2014 confirm)",

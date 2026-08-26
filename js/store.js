@@ -16,6 +16,7 @@ var Store = (function () {
     theme:    null, // "light" | "dark" | null (follow the OS)
     defaultDay: null, // 0=Mon … 6=Sun. null = use config.training.primaryDay
     pnrs:     {},   // "seaIst": "ABC123" — see setPnr
+    hotels:   {},   // "istanbul": "92736632" — hotel confirmation refs, kept locally
     garmin:   {},   // "p1": { units, importedAt, activities:[] }
     extraLog: []    // hikes added from a Garmin import, outside the plan
   };
@@ -186,6 +187,18 @@ var Store = (function () {
       if (!data.pnrs) data.pnrs = {};
       var v = String(value || '').trim().toUpperCase();
       if (v) data.pnrs[key] = v; else delete data.pnrs[key];
+      save();
+    },
+
+    /* ---- hotel confirmation references ----
+       Same principle as PNRs: kept in browser only, never committed. Hotel
+       confirmation numbers are needed for check-in but should not be public. */
+    getHotelRef: function (key) { return (data.hotels && data.hotels[key]) || ''; },
+
+    setHotelRef: function (key, value) {
+      if (!data.hotels) data.hotels = {};
+      var v = String(value || '').trim();
+      if (v) data.hotels[key] = v; else delete data.hotels[key];
       save();
     },
 
