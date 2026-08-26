@@ -10,10 +10,11 @@ var Store = (function () {
   var KEY = 'kili-training-v1';
 
   var blank = {
-    weekends: {},   // "2026-09-05": { hikeId, done, actualKm, actualGain, packKg, who:[], notes }
+    weekends: {},   // "2026-09-05": { hikeId, done, dayIdx, actualKm, actualGain, who:[], notes }
     packing:  {},   // "p1": { "Footwear::Trekking boots (…)": true }
     hikes:    [],   // user-added hikes
-    theme:    null  // "light" | "dark" | null (follow the OS)
+    theme:    null, // "light" | "dark" | null (follow the OS)
+    defaultDay: null // 0=Mon … 6=Sun. null = use config.training.primaryDay
   };
 
   function read() {
@@ -109,6 +110,11 @@ var Store = (function () {
 
     /* ---- theme ---- */
     setTheme: function (t) { data.theme = t; save(); },
+
+    /* ---- which day of the week you hike ----
+       0 = Monday … 6 = Sunday. Set globally here, or per weekend via
+       setWeekend(key, {dayIdx: n}), which wins over this. */
+    setDefaultDay: function (d) { data.defaultDay = d; save(); },
 
     /* ---- import / export ---- */
     exportJSON: function () { return JSON.stringify(data, null, 2); },

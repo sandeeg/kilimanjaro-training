@@ -46,6 +46,22 @@
   <!-- ================= DASHBOARD ================= -->
   <section class="panel" id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
 
+    <figure class="hero">
+      <img src="assets/kilimanjaro.jpg" width="1920" height="1280"
+           alt="Mount Kilimanjaro's snow-covered Kibo summit under heavy cloud, seen from the
+                alpine moorland below, with two porters walking the trail in the foreground.">
+      <div class="hero__overlay">
+        <p class="hero__eyebrow" id="heroEyebrow"></p>
+        <h2 class="hero__title">Kilimanjaro <span>5,895 m</span></h2>
+        <p class="hero__sub" id="heroSub"></p>
+      </div>
+      <figcaption class="hero__credit">
+        Photo by Joel Peel (Unsplash), via Wikimedia Commons —
+        <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.en"
+           target="_blank" rel="noopener">CC0 public domain</a>
+      </figcaption>
+    </figure>
+
     <div class="section-head">
       <h2>Where you are</h2>
       <p id="dashIntro"></p>
@@ -95,6 +111,9 @@
 
     <div class="card" style="margin-bottom:16px">
       <div class="week__foot">
+        <label class="hint" for="defaultDay">Hike day</label>
+        <select id="defaultDay"></select>
+        <span class="hint" style="opacity:.6">|</span>
         <label class="hint" for="filterPhase">Show</label>
         <select id="filterPhase">
           <option value="all">All phases</option>
@@ -118,8 +137,10 @@
         <button class="btn btn--sm" id="resetBtn"  type="button">Reset</button>
       </div>
       <p class="hint" style="margin:10px 0 0">
-        Every weekend has a suggested hike matched to that phase — change it with the dropdown.
-        Tick who came, log what you actually did, and the dashboard updates.
+        <b>Hike day</b> sets which day of the week you normally hike — Saturdays, Sundays, or any
+        weekday. Each weekend also has its own day dropdown, so you can move a single hike
+        without disturbing the rest. Swap the hike itself with the second dropdown, tick who
+        came, and log what you actually did.
         Your entries live in this browser only; use <b>Export</b> to share them with the group.
       </p>
     </div>

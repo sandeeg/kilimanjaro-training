@@ -300,6 +300,27 @@ var Schedule = (function () {
     };
   }
 
+  /* ---------- day of the week ----------
+     Weeks are anchored to a fixed date, but the hike can happen on any day of
+     that same Mon–Sun week. Precedence: a per-weekend choice beats the saved
+     global default, which beats config.training.primaryDay.
+
+     Index convention here is Mon=0 … Sun=6, which is NOT JavaScript's
+     getDay() (Sun=0 … Sat=6) — convert with toIdx/fromIdx.               */
+
+  var DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  function toIdx(jsDay) { return (jsDay + 6) % 7; }   // getDay() -> Mon=0
+  function fromIdx(idx) { return (idx + 1) % 7; }     // Mon=0 -> getDay()
+
+  function mondayOf(d) { return addDays(d, -toIdx(d.getDay())); }
+
+  function defaultDayIdx() {
+    if (Store.all.defaultDay != null) return Store.all.defaultDay;
+    var cfgDay = window.TREK_CONFIG.training.primaryDay;
+    return toIdx(cfgDay == null ? 6 : cfgDay);
+  }
+
   /* ---------- what a weekend actually is, once overrides are applied ---------- */
 
   function resolve(week) {
@@ -309,17 +330,41 @@ var Schedule = (function () {
       var found = allHikes().filter(function (h) { return h.id === saved.hikeId; })[0];
       if (found) hike = found;
     }
+
+    var dayIdx = (saved && saved.dayIdx != null) ? saved.dayIdx : defaultDayIdx();
+    var date = addDays(mondayOf(week.date), dayIdx);
+    var trekStart = parseISO(window.TREK_CONFIG.trek.startDate);
+    var today = midnight(new Date());
+
     return {
       hike: hike,
       done: !!(saved && saved.done),
       actualKm: saved && saved.actualKm != null ? saved.actualKm : null,
       actualGain: saved && saved.actualGain != null ? saved.actualGain : null,
       who: (saved && saved.who) || [],
-      notes: (saved && saved.notes) || ''
+      notes: (saved && saved.notes) || '',
+      // the day this weekend's hike actually falls on
+      dayIdx: dayIdx,
+      dayName: DAY_NAMES[dayIdx],
+      dayFromWeekend: !(saved && saved.dayIdx != null),
+      date: date,
+      dateShort: fmtShort(date),
+      dateLong: fmtLong(date),
+      isPast: date < today,
+      daysOut: daysBetween(date, trekStart),
+      // every day of this Mon–Sun week, for the picker
+      choices: DAY_NAMES.map(function (nm, i) {
+        var d = addDays(mondayOf(week.date), i);
+        return { idx: i, name: nm, date: d, short: fmtShort(d), iso: toISO(d) };
+      })
     };
   }
 
   return {
+    DAY_NAMES: DAY_NAMES,
+    toIdx: toIdx,
+    fromIdx: fromIdx,
+    defaultDayIdx: defaultDayIdx,
     build: build,
     resolve: resolve,
     allHikes: allHikes,

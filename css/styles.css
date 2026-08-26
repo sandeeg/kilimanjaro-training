@@ -191,6 +191,91 @@ main { max-width: 1160px; margin: 0 auto; padding: 24px 20px 80px; }
 .grid { display: grid; gap: 16px; }
 @media (min-width: 900px) { .grid--2 { grid-template-columns: 1fr 1fr; } }
 
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  margin: 0 0 20px;
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  background: #1a1a19;
+}
+
+.hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  object-position: 50% 58%;   /* keeps the summit band in frame under a wide crop */
+}
+
+/* The scrim is what makes white text legible on a photo — it is not decoration.
+   Text sits on the scrim, never on bare image. */
+.hero__overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 26px 24px 20px;
+  background: linear-gradient(to top,
+              rgba(8, 10, 14, 0.86) 0%,
+              rgba(8, 10, 14, 0.62) 45%,
+              rgba(8, 10, 14, 0.00) 100%);
+  color: #fff;
+}
+
+.hero__eyebrow {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero__title {
+  margin: 0;
+  font-size: clamp(24px, 4.6vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+.hero__title span {
+  font-size: 0.5em;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.72);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.hero__sub {
+  margin: 7px 0 0;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 62ch;
+}
+.hero__sub b { color: #fff; font-variant-numeric: tabular-nums; }
+
+.hero__credit {
+  position: absolute;
+  top: 8px; right: 10px;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(8, 10, 14, 0.45);
+  padding: 3px 8px;
+  border-radius: 100px;
+  backdrop-filter: blur(3px);
+}
+.hero__credit a { color: rgba(255, 255, 255, 0.92); }
+
+@media (max-width: 640px) {
+  .hero img { aspect-ratio: 4 / 3; }
+  .hero__overlay { padding: 18px 16px 14px; }
+  .hero__credit { display: none; }   /* credit moves to the README on small screens */
+}
+
 /* ---------- Stat tiles ---------- */
 
 .tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
@@ -328,6 +413,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .milestone span { color: var(--text-secondary); }
 
 .week__foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+
+.week__day { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.week__day select { flex: none; }
+.week__day .hint { font-size: 11.5px; }
 
 /* ---------- Controls ---------- */
 

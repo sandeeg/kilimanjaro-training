@@ -67,9 +67,15 @@ file to make them permanent for everyone.
 
 - **Dashboard** — days to go, weekends left, distance and climbing logged, and how many
   Kilimanjaros' worth of ascent you've done. Plus a chart of planned vs logged climbing.
-- **Training calendar** — one card per weekend. Swap the hike, tick who came, log what you
-  actually did. Phases: Base → Build → Peak → Taper. Gear-testing milestones are pinned to
-  specific weekends (break in boots, test the rain shell, weigh the duffle).
+- **Training calendar** — one card per weekend, from your own training document: the hike, why
+  that weekend, travel bookings, who's away. Swap the hike, tick who came, log what you did.
+  Gear-testing milestones are pinned to specific weekends.
+
+  **Which day you hike is up to you.** The *Hike day* dropdown at the top sets your usual day —
+  Saturdays, Sundays, or any weekday. Each weekend card also has its own day dropdown, so you
+  can move a single hike to the Wednesday without disturbing anything else; that card then
+  offers *reset to default*. Everything downstream follows: the countdown, "days before
+  departure", the past/upcoming markers and the chart's x-axis.
 - **Hike library** — every hike, sortable by tier. Add your own.
 - **Packing list** — the full Altezza list, transcribed from their PDF, with a separate
   checklist per person and the day-by-day layering for the mountain.
@@ -99,6 +105,15 @@ So all four of you can open it on a phone instead of passing files around:
 
 Each person still has their own checkboxes — Pages only hosts the files, it doesn't sync
 data between people.
+
+## The photo
+
+`assets/kilimanjaro.jpg` is Kibo under cloud with two porters on the trail — by Joel Peel,
+originally on Unsplash, via Wikimedia Commons, released under
+[CC0](https://creativecommons.org/publicdomain/zero/1.0/deed.en) (public domain dedication).
+CC0 imposes no attribution requirement; the credit in the corner of the hero is there because
+crediting a photographer is the decent thing to do. To use your own photo instead, drop it in
+at the same path and keep it roughly 3:2 — the hero crops to 16:7 on desktop and 4:3 on phones.
 
 ## Sources
 

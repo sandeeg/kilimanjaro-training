@@ -112,9 +112,29 @@
 
   /* ---------- dashboard ---------- */
 
+  function renderHero() {
+    var start = Schedule.parseISO(CFG.trek.startDate);
+    var end   = Schedule.parseISO(CFG.trek.endDate);
+    var fmt   = function (d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); };
+
+    $('heroEyebrow').textContent =
+      CFG.trek.route + ' · ' + CFG.trek.days + ' days · ' +
+      fmt(start) + ' – ' + fmt(end) + ' ' + end.getFullYear();
+
+    var t = totals();
+    $('heroSub').innerHTML =
+      '<b>' + plan.daysToTrek + '</b> days to go. ' +
+      CFG.team.map(function (p) { return esc(p.name.split(' ')[0]); }).join(', ') +
+      ' — <b>' + t.remaining + '</b> of <b>' + plan.weeks.length +
+      '</b> training weekends still ahead, and <b>' + num(t.planGain) +
+      ' m</b> of climbing in the plan.';
+  }
+
   function renderDashboard() {
     var t = totals();
     var kili = kiliAscentM();
+
+    renderHero();
 
     $('dashIntro').textContent =
       plan.weeks.length
@@ -159,7 +179,7 @@
       var r = Schedule.resolve(w);
       p += w.targetGain;
       if (r.done) l += r.actualGain != null ? r.actualGain : (r.hike ? r.hike.gainM : w.targetGain);
-      labels.push(w.dateShort.replace(/^\w+,?\s*/, ''));
+      labels.push(r.dateShort.replace(/^\w+,?\s*/, ''));
       planCum.push(p);
       loggedCum.push(i <= lastDone ? l : null);
     });
@@ -216,9 +236,9 @@
     var r = Schedule.resolve(next);
     var h = r.hike;
     $('nextUp').innerHTML =
-      '<div class="week__date">' + esc(next.dateLong) + '</div>' +
+      '<div class="week__date">' + esc(r.dateLong) + '</div>' +
       '<div class="hint" style="margin-bottom:8px">Week ' + next.index + ' of ' + next.total +
-        ' · ' + esc(next.phase.toUpperCase()) + ' · ' + next.daysOut + ' days before departure</div>' +
+        ' · ' + esc(next.phase.toUpperCase()) + ' · ' + r.daysOut + ' days before departure</div>' +
       (h ? '<div style="font-weight:600;font-size:15px">' + esc(h.name) + '</div>' +
            '<div class="hint">' + esc(h.area || '') + '</div>' +
            '<div class="week__stats" style="margin-top:8px">' +
@@ -241,7 +261,7 @@
   function nextWeek() {
     var undone = plan.weeks.filter(function (w) { return !Schedule.resolve(w).done; });
     if (!undone.length) return null;
-    var upcoming = undone.filter(function (w) { return !w.isPast; });
+    var upcoming = undone.filter(function (w) { return !Schedule.resolve(w).isPast; });
     return upcoming.length ? upcoming[0] : undone[0];
   }
 
@@ -267,6 +287,16 @@
                '<td style="min-width:120px"><div class="progressbar"><i style="width:' + pct + '%"></i></div>' +
                '<span class="hint">' + packed + ' / ' + packTotal + '</span></td></tr>';
       }).join('') + '</tbody></table></div>';
+  }
+
+  /* ---------- which day of the week you hike ---------- */
+
+  function renderDayPicker() {
+    var sel = $('defaultDay');
+    var cur = Schedule.defaultDayIdx();
+    sel.innerHTML = Schedule.DAY_NAMES.map(function (nm, i) {
+      return '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + esc(nm) + 's</option>';
+    }).join('');
   }
 
   /* ---------- training calendar ---------- */
@@ -314,27 +344,40 @@
 
       return '' +
       '<article class="week ' + (r.done ? 'week--done' : '') + ' ' + (isNext ? 'week--next' : '') +
-        ' ' + (w.isPast && !r.done ? 'week--past' : '') + '"' +
+        ' ' + (r.isPast && !r.done ? 'week--past' : '') + '"' +
         ' style="--phase:var(' + phaseVar(w.phase) + ')" data-key="' + w.dateKey + '">' +
 
         '<div class="week__top">' +
           '<div>' +
             '<div class="week__wk">Week ' + w.index + ' / ' + w.total + '</div>' +
-            '<div class="week__date">' + esc(w.dateShort) + '</div>' +
+            '<div class="week__date">' + esc(r.dateShort) + '</div>' +
             '<div class="hint">' +
-              (w.isPast ? 'already passed · ' : '') + w.daysOut + ' days before departure' +
+              (r.isPast ? 'already passed · ' : '') + r.daysOut + ' days before departure' +
               (w.docDate ? ' · doc: ' + esc(w.docDate) : '') +
             '</div>' +
           '</div>' +
           '<div class="week__meta">' +
             (r.done ? '<span class="chip chip--done">Done</span>'
                     : isNext ? '<span class="chip chip--next">Next up</span>'
-                    : w.isPast ? '<span class="chip chip--missed">Not logged</span>' : '') +
+                    : r.isPast ? '<span class="chip chip--missed">Not logged</span>' : '') +
             '<div style="margin-top:4px"><span class="chip chip--' + w.phase + '">' + esc(w.phase) + '</span></div>' +
           '</div>' +
         '</div>' +
 
         (w.why ? '<div class="week__why">' + esc(w.why) + '</div>' : '') +
+
+        '<div class="week__day">' +
+          '<label class="sr-only" for="day-' + w.dateKey + '">Day of the week for week ' + w.index + '</label>' +
+          '<select id="day-' + w.dateKey + '" data-act="day">' +
+            r.choices.map(function (c) {
+              return '<option value="' + c.idx + '"' + (c.idx === r.dayIdx ? ' selected' : '') + '>' +
+                     esc(c.short) + '</option>';
+            }).join('') +
+          '</select>' +
+          (r.dayFromWeekend
+            ? '<span class="hint">following the default</span>'
+            : '<button type="button" class="linkbtn" data-act="dayreset">reset to default</button>') +
+        '</div>' +
 
         '<label class="sr-only" for="sel-' + w.dateKey + '">Hike for ' + esc(w.dateShort) + '</label>' +
         '<select id="sel-' + w.dateKey + '" data-act="hike" style="width:100%">' + options + '</select>' +
@@ -431,16 +474,26 @@
       var act = e.target.getAttribute('data-act');
 
       if (act === 'hike') Store.setWeekend(key, { hikeId: e.target.value });
+      if (act === 'day')  Store.setWeekend(key, { dayIdx: +e.target.value });
       if (act === 'done') Store.setWeekend(key, { done: e.target.checked });
       if (act === 'km')   Store.setWeekend(key, { actualKm: e.target.value === '' ? null : +e.target.value });
       if (act === 'gain') Store.setWeekend(key, { actualGain: e.target.value === '' ? null : +e.target.value });
     });
 
     root.addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-act="who"]');
-      if (!btn) return;
-      var art = btn.closest('.week');
-      Store.toggleWho(art.getAttribute('data-key'), btn.getAttribute('data-person'));
+      var who = e.target.closest('[data-act="who"]');
+      if (who) {
+        Store.toggleWho(who.closest('.week').getAttribute('data-key'),
+                        who.getAttribute('data-person'));
+        return;
+      }
+      var reset = e.target.closest('[data-act="dayreset"]');
+      if (reset) Store.setWeekend(reset.closest('.week').getAttribute('data-key'), { dayIdx: null });
+    });
+
+    // global default day
+    $('defaultDay').addEventListener('change', function () {
+      Store.setDefaultDay(+this.value);
     });
 
     $('filterPhase').addEventListener('change', renderCalendar);
@@ -722,6 +775,7 @@
     $('brandSub').textContent =
       CFG.trek.route + ' · ' + CFG.team.map(function (p) { return p.name; }).join(', ');
 
+    renderDayPicker();
     renderBanner();
     renderDashboard();
     renderCalendar();
