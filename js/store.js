@@ -15,7 +15,9 @@ var Store = (function () {
     hikes:    [],   // user-added hikes
     theme:    null, // "light" | "dark" | null (follow the OS)
     defaultDay: null, // 0=Mon … 6=Sun. null = use config.training.primaryDay
-    pnrs:     {}    // "seaIst": "ABC123" — see setPnr
+    pnrs:     {},   // "seaIst": "ABC123" — see setPnr
+    garmin:   {},   // "p1": { units, importedAt, activities:[] }
+    extraLog: []    // hikes added from a Garmin import, outside the plan
   };
 
   function read() {
@@ -111,6 +113,67 @@ var Store = (function () {
 
     /* ---- theme ---- */
     setTheme: function (t) { data.theme = t; save(); },
+
+    /* ---- Garmin imports, per person ----
+       The parsed activity list is kept so a re-match is possible without
+       re-importing the file. Like everything else here it stays in this
+       browser. */
+    setGarmin: function (personId, payload) {
+      if (!data.garmin) data.garmin = {};
+      data.garmin[personId] = payload;
+      save();
+    },
+
+    getGarmin: function (personId) {
+      return (data.garmin && data.garmin[personId]) || null;
+    },
+
+    clearGarmin: function (personId) {
+      if (data.garmin) delete data.garmin[personId];
+      // drop anything that import had written into the weekends
+      Object.keys(data.weekends).forEach(function (k) {
+        var w = data.weekends[k];
+        if (w.people && w.people[personId]) {
+          delete w.people[personId];
+          if (!Object.keys(w.people).length) delete w.people;
+        }
+      });
+      data.extraLog = (data.extraLog || []).filter(function (e) {
+        return !(e.src === 'garmin' && e.who.length === 1 && e.who[0] === personId);
+      });
+      save();
+    },
+
+    /* ---- per-person distance on a given weekend ----
+       Four people on the same hike record slightly different numbers, so each
+       person's own figure is kept rather than one shared value. */
+    setPersonActual: function (weekendKey, personId, entry) {
+      var w = this.weekend(weekendKey);
+      if (!w.people) w.people = {};
+      w.people[personId] = entry;
+      if (w.who.indexOf(personId) === -1) w.who.push(personId);
+      w.done = true;
+      save();
+    },
+
+    personActual: function (weekendKey, personId) {
+      var w = data.weekends[weekendKey];
+      return (w && w.people && w.people[personId]) || null;
+    },
+
+    /* ---- hikes logged from an import, outside the plan ---- */
+    addExtraLog: function (entry) {
+      if (!data.extraLog) data.extraLog = [];
+      if (data.extraLog.some(function (e) { return e.id === entry.id; })) return false;
+      data.extraLog.push(entry);
+      save();
+      return true;
+    },
+
+    removeExtraLog: function (id) {
+      data.extraLog = (data.extraLog || []).filter(function (e) { return e.id !== id; });
+      save();
+    },
 
     /* ---- airline reservation codes ----
        Kept in this browser and NOWHERE else. A booking reference plus a surname

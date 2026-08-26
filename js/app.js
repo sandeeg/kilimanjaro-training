@@ -341,17 +341,8 @@
       '<div class="tablescroll"><table><thead><tr><th>Person</th>' +
       '<th class="num">Hikes done</th><th class="num">Climbed</th><th>Packing</th></tr></thead><tbody>' +
       CFG.team.map(function (p) {
-        var hikes = 0, gain = 0;
-        plan.weeks.forEach(function (w) {
-          var r = Schedule.resolve(w);
-          if (r.done && r.who.indexOf(p.id) !== -1) {
-            hikes++;
-            gain += r.actualGain != null ? r.actualGain : (r.hike ? r.hike.gainM : w.targetGain);
-          }
-        });
-        Schedule.completedLog().forEach(function (e) {
-          if (e.who.indexOf(p.id) !== -1) { hikes++; gain += e.gain; }
-        });
+        var pt = personTotals(p.id);
+        var hikes = pt.count, gain = pt.gain;
         var packed = Store.packedCount(p.id);
         var pct = packTotal ? Math.round((packed / packTotal) * 100) : 0;
         return '<tr><td>' + esc(p.name) + '</td>' +
@@ -915,6 +906,273 @@
     });
   }
 
+
+  /* ---------- Garmin ----------
+     Each person imports their own Garmin CSV. Parsing happens here in the
+     browser; the parsed activities are kept so the preview survives a reload,
+     and nothing touches the calendar until Apply is pressed. */
+
+  var garminPreview = {};    // personId -> { matched, unmatched, warning }
+
+  function garminUnits(pid) {
+    var g = Store.getGarmin(pid);
+    return (g && g.units) || { dist: 'km', elev: 'm' };
+  }
+
+  function rebuildPreview(pid) {
+    var g = Store.getGarmin(pid);
+    if (!g || !g.activities || !g.activities.length) { delete garminPreview[pid]; return; }
+    var res = Garmin.match(g.activities, plan.weeks);
+    garminPreview[pid] = {
+      matched: res.matched,
+      unmatched: res.unmatched,
+      warning: Garmin.unitWarning(g.activities, g.units || { dist: 'km' })
+    };
+  }
+
+  function renderGarmin() {
+    $('garminPeople').innerHTML = CFG.team.map(function (person) {
+      var g = Store.getGarmin(person.id);
+      var u = garminUnits(person.id);
+      var pv = garminPreview[person.id];
+
+      var head =
+        '<h3 class="card__title">' + esc(person.name) + '</h3>' +
+        '<p class="card__sub">' +
+          (g && g.activities
+            ? g.activities.length + ' activities imported' +
+              (g.importedAt ? ' on ' + esc(g.importedAt) : '') +
+              (g.activities.length
+                ? ' \u00b7 ' + esc(g.activities[0].isoDate) + ' to ' +
+                  esc(g.activities[g.activities.length - 1].isoDate)
+                : '')
+            : 'No file imported yet.') +
+        '</p>';
+
+      var controls =
+        '<div class="week__foot" style="margin-bottom:10px">' +
+          '<label class="hint" for="gu-d-' + person.id + '">Distances in</label>' +
+          '<select id="gu-d-' + person.id + '" data-gunit="dist" data-person="' + person.id + '">' +
+            '<option value="km"' + (u.dist === 'km' ? ' selected' : '') + '>kilometres</option>' +
+            '<option value="mi"' + (u.dist === 'mi' ? ' selected' : '') + '>miles</option>' +
+          '</select>' +
+          '<label class="hint" for="gu-e-' + person.id + '">Climb in</label>' +
+          '<select id="gu-e-' + person.id + '" data-gunit="elev" data-person="' + person.id + '">' +
+            '<option value="m"' + (u.elev === 'm' ? ' selected' : '') + '>metres</option>' +
+            '<option value="ft"' + (u.elev === 'ft' ? ' selected' : '') + '>feet</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="week__foot">' +
+          '<label class="btn btn--sm" for="gf-' + person.id + '">Choose CSV\u2026</label>' +
+          '<input id="gf-' + person.id + '" class="sr-only" type="file" accept=".csv,text/csv"' +
+            ' data-gfile="' + person.id + '">' +
+          (g ? '<button class="btn btn--sm" data-gclear="' + person.id + '" type="button">' +
+               'Remove import</button>' : '') +
+          (pv && pv.matched.length
+            ? '<button class="btn btn--sm btn--primary" data-gapply="' + person.id + '" type="button">' +
+              'Apply ' + pv.matched.length + ' to calendar</button>'
+            : '') +
+        '</div>';
+
+      var warn = (pv && pv.warning)
+        ? '<div class="banner" style="margin:12px 0 0"><span aria-hidden="true">\u26a0</span>' +
+          '<div>' + esc(pv.warning) + '</div></div>'
+        : '';
+
+      var err = (g && g.error)
+        ? '<div class="banner" style="margin:12px 0 0"><span aria-hidden="true">\u26a0</span>' +
+          '<div><b>That file could not be read.</b> ' + esc(g.error) + '</div></div>'
+        : '';
+
+      var body = '';
+      if (pv) {
+        body += '<div class="tablescroll" style="margin-top:12px"><table>' +
+          '<thead><tr><th>Weekend</th><th>Activity</th>' +
+          '<th class="num">km</th><th class="num">m up</th><th></th></tr></thead><tbody>' +
+          pv.matched.map(function (m) {
+            var already = Store.personActual(m.week.dateKey, person.id);
+            return '<tr><td>Wk ' + m.week.index + '<br><span class="hint">' +
+                esc(m.week.dateShort) + '</span></td>' +
+              '<td>' + esc(m.activity.title || m.activity.type || 'Activity') +
+                '<br><span class="hint">' + esc(m.activity.isoDate) + ' \u00b7 ' +
+                esc(m.activity.type || '?') + '</span></td>' +
+              '<td class="num">' + m.activity.km + '</td>' +
+              '<td class="num">' + (m.activity.gainM == null ? '\u2014' : num(m.activity.gainM)) + '</td>' +
+              '<td>' + (already ? '<span class="chip chip--done">applied</span>' : '') + '</td></tr>';
+          }).join('') +
+          '</tbody></table></div>';
+
+        var offPlan = pv.unmatched.filter(function (x) {
+          return x.activity.kind !== 'other' && x.why !== 'second activity that week';
+        });
+        if (offPlan.length) {
+          body += '<p class="card__sub" style="margin:14px 0 6px">' + offPlan.length +
+                  ' on-foot activities outside the plan\u0027s weekends:</p>' +
+            '<div class="tablescroll"><table><thead><tr><th>Date</th><th>Activity</th>' +
+            '<th class="num">km</th><th class="num">m up</th><th></th></tr></thead><tbody>' +
+            offPlan.slice(0, 25).map(function (x) {
+              var a = x.activity;
+              var logged = (Store.all.extraLog || []).some(function (e) {
+                return e.id === 'g-' + person.id + '-' + a.id;
+              });
+              return '<tr><td>' + esc(a.isoDate) + '</td>' +
+                '<td>' + esc(a.title || a.type || 'Activity') + '</td>' +
+                '<td class="num">' + a.km + '</td>' +
+                '<td class="num">' + (a.gainM == null ? '\u2014' : num(a.gainM)) + '</td>' +
+                '<td>' + (logged
+                  ? '<span class="chip chip--done">in the log</span>'
+                  : '<button class="btn btn--sm" type="button" data-glog="' + person.id +
+                    '" data-act-id="' + esc(a.id) + '">Add to log</button>') + '</td></tr>';
+            }).join('') + '</tbody></table></div>' +
+            (offPlan.length > 25
+              ? '<p class="hint">Showing the first 25 of ' + offPlan.length + '.</p>'
+              : '');
+        }
+      }
+
+      return '<div class="card">' + head + controls + err + warn + body + '</div>';
+    }).join('');
+
+    renderGarminTotals();
+  }
+
+  function renderGarminTotals() {
+    var anyImport = CFG.team.some(function (p) { return !!Store.getGarmin(p.id); });
+    $('garminTotalsSub').textContent = anyImport
+      ? 'Distance and climbing per person, counting applied weekends and anything added to the log.'
+      : 'Nothing imported yet. These are the totals from what has been logged by hand.';
+
+    $('garminTotals').innerHTML =
+      '<table><thead><tr><th>Person</th><th class="num">Weekends</th>' +
+      '<th class="num">km</th><th class="num">m climbed</th><th>Source</th></tr></thead><tbody>' +
+      CFG.team.map(function (person) {
+        var t = personTotals(person.id);
+        var g = Store.getGarmin(person.id);
+        return '<tr><td>' + esc(person.name) + '</td>' +
+          '<td class="num">' + t.count + '</td>' +
+          '<td class="num">' + km(t.km) + '</td>' +
+          '<td class="num">' + num(t.gain) + '</td>' +
+          '<td class="hint">' + (g ? 'Garmin import' : 'manual') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  }
+
+  /* One person's totals: their own recorded figures where they exist, the
+     hike's published stats where they only ticked attendance. */
+  function personTotals(personId) {
+    var kmSum = 0, gainSum = 0, count = 0;
+
+    plan.weeks.forEach(function (w) {
+      var r = Schedule.resolve(w);
+      if (!r.done || r.who.indexOf(personId) === -1) return;
+      count++;
+      var mine = r.people && r.people[personId];
+      if (mine) { kmSum += mine.km || 0; gainSum += mine.gain || 0; }
+      else {
+        kmSum += r.actualKm != null ? r.actualKm : (r.hike ? r.hike.distanceKm : w.targetKm);
+        gainSum += r.actualGain != null ? r.actualGain : (r.hike ? r.hike.gainM : w.targetGain);
+      }
+    });
+
+    Schedule.completedLog().forEach(function (e) {
+      if (e.who.indexOf(personId) === -1) return;
+      count++; kmSum += e.km; gainSum += e.gain;
+    });
+
+    return { km: kmSum, gain: gainSum, count: count };
+  }
+
+  function initGarminEvents() {
+    var root = $('garminPeople');
+
+    root.addEventListener('change', function (e) {
+      var pid = e.target.getAttribute && e.target.getAttribute('data-person');
+      var which = e.target.getAttribute && e.target.getAttribute('data-gunit');
+      if (pid && which) {
+        var u = garminUnits(pid);
+        u[which] = e.target.value;
+        var g = Store.getGarmin(pid) || {};
+        g.units = u;
+        // re-parse the stored raw text so the new units take effect
+        if (g.raw) {
+          var res = Garmin.parse(g.raw, u);
+          g.activities = res.activities;
+          g.error = res.error || null;
+        }
+        Store.setGarmin(pid, g);
+        return;
+      }
+
+      var filePid = e.target.getAttribute && e.target.getAttribute('data-gfile');
+      if (filePid && e.target.files && e.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var text = String(reader.result);
+          var u2 = garminUnits(filePid);
+          var res = Garmin.parse(text, u2);
+          Store.setGarmin(filePid, {
+            units: u2,
+            raw: text,
+            importedAt: Schedule.toISO(new Date()),
+            activities: res.activities,
+            error: res.error || null
+          });
+        };
+        reader.readAsText(e.target.files[0]);
+      }
+    });
+
+    root.addEventListener('click', function (e) {
+      var clear = e.target.closest('[data-gclear]');
+      if (clear) {
+        var cid = clear.getAttribute('data-gclear');
+        if (confirm('Remove ' + nameOf(cid) + '\u2019s import, and everything it wrote ' +
+                    'into the calendar and the log?')) {
+          delete garminPreview[cid];
+          Store.clearGarmin(cid);
+        }
+        return;
+      }
+
+      var apply = e.target.closest('[data-gapply]');
+      if (apply) {
+        var aid = apply.getAttribute('data-gapply');
+        var pv = garminPreview[aid];
+        if (!pv) return;
+        pv.matched.forEach(function (m) {
+          Store.setPersonActual(m.week.dateKey, aid, {
+            km: m.activity.km,
+            gain: m.activity.gainM || 0,
+            title: m.activity.title || m.activity.type || '',
+            date: m.activity.isoDate,
+            src: 'garmin'
+          });
+        });
+        return;
+      }
+
+      var log = e.target.closest('[data-glog]');
+      if (log) {
+        var lpid = log.getAttribute('data-glog');
+        var actId = log.getAttribute('data-act-id');
+        var g = Store.getGarmin(lpid);
+        var a = g && g.activities.filter(function (x) { return x.id === actId; })[0];
+        if (!a) return;
+        Store.addExtraLog({
+          id: 'g-' + lpid + '-' + a.id,
+          src: 'garmin',
+          date: a.isoDate,
+          hikeId: null,
+          title: a.title || a.type || 'Activity',
+          km: a.km,
+          gain: a.gainM || 0,
+          maxAltM: a.maxAltM || 0,
+          who: [lpid],
+          notes: 'From Garmin' + (a.type ? ' \u00b7 ' + a.type : '')
+        });
+      }
+    });
+  }
+
   /* ---------- export / import / reset ---------- */
 
   function download(filename, text) {
@@ -985,6 +1243,8 @@
     renderPacking();
     renderItinerary();
     renderFlights();
+    CFG.team.forEach(function (p) { rebuildPreview(p.id); });
+    renderGarmin();
   }
 
   function init() {
@@ -1002,6 +1262,7 @@
     initPackingEvents();
     initDataEvents();
     initFlightEvents();
+    initGarminEvents();
     renderAll();
 
     // any save re-renders everything that depends on it
@@ -1012,6 +1273,8 @@
       renderHikes();
       renderPacking();
       renderFlights();
+      CFG.team.forEach(function (p) { rebuildPreview(p.id); });
+      renderGarmin();
     });
   }
 

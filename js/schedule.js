@@ -352,6 +352,8 @@ var Schedule = (function () {
       dateLong: fmtLong(date),
       isPast: date < today,
       daysOut: daysBetween(date, trekStart),
+      // each person's own recorded distance for this weekend
+      people: (saved && saved.people) || {},
       // every day of this Mon–Sun week, for the picker
       choices: DAY_NAMES.map(function (nm, i) {
         var d = addDays(mondayOf(week.date), i);
@@ -364,6 +366,22 @@ var Schedule = (function () {
 
   function completedLog() {
     var cfg = window.TREK_CONFIG;
+    var extra = (Store.all.extraLog || []).map(function (e) {
+      var hike = e.hikeId ? hikeById(e.hikeId) : null;
+      return {
+        id: e.id,
+        hike: hike || { name: e.title || 'Logged activity', state: e.state || '\u2014',
+                        maxAltM: e.maxAltM || 0 },
+        date: e.date ? parseISO(e.date) : null,
+        dateShort: e.date ? fmtShort(parseISO(e.date)) : null,
+        who: e.who || [],
+        notes: e.notes || '',
+        km: e.km || 0,
+        gain: e.gain || 0,
+        fromImport: e.src === 'garmin'
+      };
+    });
+
     return (cfg.completedLog || []).map(function (e) {
       var hike = hikeById(e.hikeId);
       return {
@@ -374,9 +392,10 @@ var Schedule = (function () {
         who: e.who || [],
         notes: e.notes || '',
         km: e.actualKm != null ? e.actualKm : (hike ? hike.distanceKm : 0),
-        gain: e.actualGain != null ? e.actualGain : (hike ? hike.gainM : 0)
+        gain: e.actualGain != null ? e.actualGain : (hike ? hike.gainM : 0),
+        fromImport: false
       };
-    });
+    }).concat(extra);
   }
 
   return {

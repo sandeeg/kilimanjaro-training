@@ -35,6 +35,7 @@
     <button class="tab" role="tab" id="tab-calendar"  aria-controls="panel-calendar"  aria-selected="false">Training calendar</button>
     <button class="tab" role="tab" id="tab-hikes"     aria-controls="panel-hikes"     aria-selected="false">Hike library</button>
     <button class="tab" role="tab" id="tab-packing"   aria-controls="panel-packing"   aria-selected="false">Packing list</button>
+    <button class="tab" role="tab" id="tab-garmin"    aria-controls="panel-garmin"    aria-selected="false">Garmin</button>
     <button class="tab" role="tab" id="tab-itinerary" aria-controls="panel-itinerary" aria-selected="false">The trek</button>
   </nav>
 </header>
@@ -233,6 +234,40 @@
     </div>
   </section>
 
+  <!-- ================= GARMIN ================= -->
+  <section class="panel" id="panel-garmin" role="tabpanel" aria-labelledby="tab-garmin" hidden>
+    <div class="section-head">
+      <h2>Garmin</h2>
+      <p>Import each person's Garmin activities and the kilometres and climbing fill
+         themselves in. Everything is parsed in your own browser &mdash; no Garmin login,
+         nothing uploaded, nothing stored outside this device.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3 class="card__title">Getting the file</h3>
+      <ol class="steps">
+        <li>Open <a href="https://connect.garmin.com/modern/activities" target="_blank" rel="noopener">Garmin Connect &rarr; Activities</a> on a computer.</li>
+        <li>Scroll far enough back to load every hike you want &mdash; the export only
+            contains what's currently on screen.</li>
+        <li>Click <b>Export CSV</b> (top right). A <span class="mono">Activities.csv</span> downloads.</li>
+        <li>Pick the matching units below, then choose that file.</li>
+      </ol>
+      <p class="hint" style="margin:10px 0 0">
+        Activities are matched to a training weekend by <b>week</b>, not exact day, so it
+        doesn't matter which day you actually went. On-foot activities only &mdash; rides and
+        swims are ignored. Nothing is written until you press <b>Apply</b>.
+      </p>
+    </div>
+
+    <div class="grid grid--2" id="garminPeople"></div>
+
+    <div class="card" style="margin-top:16px">
+      <h3 class="card__title">Kilometres per person</h3>
+      <p class="card__sub" id="garminTotalsSub"></p>
+      <div class="tablescroll" id="garminTotals"></div>
+    </div>
+  </section>
+
   <!-- ================= ITINERARY ================= -->
   <section class="panel" id="panel-itinerary" role="tabpanel" aria-labelledby="tab-itinerary" hidden>
     <div class="section-head">
@@ -274,6 +309,7 @@
 <script src="js/store.js"></script>
 <script src="js/schedule.js"></script>
 <script src="js/chart.js"></script>
+<script src="js/garmin.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

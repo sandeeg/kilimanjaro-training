@@ -482,6 +482,12 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   font-variant-numeric: tabular-nums;
 }
 
+.steps { margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--text-secondary); }
+.steps li { margin-bottom: 5px; }
+.steps b { color: var(--text-primary); }
+
+label.btn { display: inline-block; }
+
 /* ---------- Controls ---------- */
 
 select, input[type="text"], input[type="number"], input[type="url"], textarea {

@@ -98,10 +98,42 @@ stays on the card so nobody forgets.
   offers *reset to default*. Everything downstream follows: the countdown, "days before
   departure", the past/upcoming markers and the chart's x-axis.
 - **Hike library** — every hike, sortable by tier. Add your own.
+- **Garmin** — import each person's Garmin activity export and the kilometres and
+  climbing fill themselves in. See below.
 - **Packing list** — the full Altezza list, transcribed from their PDF, with a separate
   checklist per person and the day-by-day layering for the mountain.
 - **The trek** — altitude profile and day-by-day, including the climb-high-sleep-low day,
   plus the flights and how they sit around the trek.
+
+## Garmin
+
+Fully automatic live sync is **not possible here**, and it's worth knowing why: Garmin's
+official Activity API uses OAuth with a client *secret*, which needs a server to hold it.
+This site is static files on GitHub Pages — there is no server, and anything committed is
+public. So instead of a half-working live feed, the site reads the export Garmin already
+gives you.
+
+Per person, once:
+
+1. Garmin Connect on a computer → **Activities** → scroll back far enough to load the hikes
+   you want (the export only contains what's on screen) → **Export CSV** (top right).
+2. On the **Garmin** tab, pick the units matching your Garmin account (km/miles, metres/feet),
+   then choose the file.
+3. Check the preview, then press **Apply**.
+
+What it does:
+
+- Matches activities to a training weekend **by week, not exact day** — so it doesn't matter
+  which day you actually went, and it works with the per-weekend day picker.
+- Ignores rides, swims and anything not on foot.
+- Keeps **each person's own distance** for the same hike, rather than one shared number.
+- Offers off-plan activities (an earlier hike, a holiday traverse) for the "Already in the
+  bank" log.
+- **Remove import** undoes everything that import wrote, including log entries.
+
+Parsing happens in your browser. No Garmin login, nothing uploaded, and the file itself is
+never stored anywhere but this device. If the numbers look wrong by a factor of ~1.6 or ~3.3,
+the unit selector is set incorrectly — the site warns you if the averages look implausible.
 
 ## Reservation codes
 
