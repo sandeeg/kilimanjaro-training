@@ -224,17 +224,24 @@ var Chart = (function () {
     var plotW = W - PAD.l - PAD.r;
     var plotH = H - PAD.t - PAD.b;
 
-    // Each day contributes a start and an end point, so the profile shows the
-    // climb AND the descent inside a day (summit day especially).
+    // A day is start -> (high point) -> end. The high point is essential, not
+    // decorative: on summit day you climb to 5,895 m and then sleep at 3,820 m,
+    // so plotting only the two camps draws a line sloping downwards that never
+    // touches the summit at all. Same story on day 3 over Lava Tower.
     var pts = [];
     days.forEach(function (d, i) {
       pts.push({ alt: d.altStartM, day: d, at: i, edge: 'start' });
-      pts.push({ alt: d.altEndM,   day: d, at: i, edge: 'end' });
+      var high = d.highPointM;
+      if (high != null && high > d.altStartM && high > d.altEndM) {
+        pts.push({ alt: high, day: d, at: i, edge: 'high' });
+      }
+      pts.push({ alt: d.altEndM, day: d, at: i, edge: 'end' });
     });
 
     var maxAlt = 0;
     days.forEach(function (d) {
       maxAlt = Math.max(maxAlt, d.altStartM, d.altEndM);
+      if (d.highPointM != null) maxAlt = Math.max(maxAlt, d.highPointM);
       if (d.summit) maxAlt = Math.max(maxAlt, window.TREK_CONFIG.trek.summitAltitudeM);
     });
     var yMax = niceCeil(maxAlt * 1.02);
@@ -285,7 +292,11 @@ var Chart = (function () {
 
     // day labels along the bottom, at each day's midpoint
     days.forEach(function (d, i) {
-      var mid = (x(i * 2) + x(i * 2 + 1)) / 2;
+      // Days no longer contribute a fixed number of points, so find this day's
+      // own span instead of assuming two.
+      var idxs = [];
+      pts.forEach(function (q, k) { if (q.at === i) idxs.push(k); });
+      var mid = (x(idxs[0]) + x(idxs[idxs.length - 1])) / 2;
       svg.appendChild(el('text', {
         x: mid, y: H - 24, 'text-anchor': 'middle',
         fill: 'var(--text-muted)', 'font-size': 11, 'font-family': 'inherit'
@@ -300,13 +311,20 @@ var Chart = (function () {
 
     // markers, with the summit one called out directly
     pts.forEach(function (p, i) {
-      var isSummitTop = p.day.summit && p.edge === 'start';
+      var isHigh = p.edge === 'high';
       svg.appendChild(el('circle', {
-        cx: x(i), cy: y(p.alt), r: 4,
+        cx: x(i), cy: y(p.alt), r: isHigh ? 5.5 : 4,
         fill: p.day.summit ? 'var(--series-2)' : 'var(--series-1)',
         stroke: 'var(--surface-1)', 'stroke-width': 2
       }));
-      void isSummitTop;
+      // Label the summit on the mark itself, so it doesn't depend on hovering.
+      if (isHigh && p.day.summit) {
+        svg.appendChild(el('text', {
+          x: x(i), y: y(p.alt) - 11, 'text-anchor': 'middle',
+          fill: 'var(--series-2)', 'font-size': 11, 'font-weight': 700,
+          'font-family': 'inherit'
+        }, 'UHURU ' + fmtNum(p.alt) + ' m'));
+      }
     });
 
     // Uhuru Peak reference line
@@ -334,7 +352,10 @@ var Chart = (function () {
       var i = Math.max(0, Math.min(n - 1, Math.round(frac * (n - 1))));
       var p = pts[i];
       tip.innerHTML =
-        '<div class="tooltip__t">Day ' + p.day.day + ' — ' + (p.edge === 'start' ? 'start' : 'camp') + '</div>' +
+        '<div class="tooltip__t">Day ' + p.day.day + ' — ' +
+          (p.edge === 'start' ? 'start of day'
+           : p.edge === 'high' ? (p.day.summit ? 'SUMMIT' : 'high point')
+           : 'camp for the night') + '</div>' +
         '<div class="tooltip__r"><span>Altitude</span><span>' + fmtNum(p.alt) + ' m</span></div>' +
         '<div class="tooltip__r"><span>Distance</span><span>' + p.day.distanceKm + ' km</span></div>' +
         '<div class="tooltip__r"><span>On foot</span><span>' + p.day.hours + ' h</span></div>';

@@ -741,7 +741,9 @@
     var it = CFG.itinerary || [];
     var totalKm = it.reduce(function (a, d) { return a + (d.distanceKm || 0); }, 0);
     var totalUp = it.reduce(function (a, d) {
-      return a + Math.max(0, (d.summit ? CFG.trek.summitAltitudeM : d.altEndM) - d.altStartM);
+      var high = d.highPointM != null ? d.highPointM
+               : (d.summit ? CFG.trek.summitAltitudeM : Math.max(d.altStartM, d.altEndM));
+      return a + Math.max(0, high - d.altStartM);
     }, 0);
 
     $('itinIntro').textContent =
@@ -760,14 +762,19 @@
     $('itinDaysSub').textContent = 'Hover the chart for the same numbers.';
 
     $('itinDays').innerHTML = it.map(function (d) {
-      var up = Math.max(0, (d.summit ? CFG.trek.summitAltitudeM : d.altEndM) - d.altStartM);
-      var down = Math.max(0, (d.summit ? CFG.trek.summitAltitudeM : d.altStartM) - d.altEndM);
+      // Up to the day's high point, then down from there. Camp-to-camp badly
+      // understates both on summit day and on the Lava Tower day.
+      var high = d.highPointM != null ? d.highPointM
+               : (d.summit ? CFG.trek.summitAltitudeM : Math.max(d.altStartM, d.altEndM));
+      var up = Math.max(0, high - d.altStartM);
+      var down = Math.max(0, high - d.altEndM);
       return '<div class="itin-day ' + (d.summit ? 'itin-day--summit' : '') + '">' +
         '<div class="itin-day__n">' + d.day + '</div>' +
         '<div class="itin-day__body">' +
           '<div class="itin-day__title">' + esc(d.title) + '</div>' +
           '<div class="itin-day__facts">' +
             esc(d.zone) + ' · <b>' + d.distanceKm + '</b> km · <b>' + esc(d.hours) + '</b> h · ' +
+            (d.highPointM != null ? 'high point <b>' + num(d.highPointM) + '</b> m · ' : '') +
             'sleep at <b>' + num(d.altEndM) + '</b> m · ' +
             '↑ <b>' + num(up) + '</b> m ↓ <b>' + num(down) + '</b> m' +
           '</div>' +

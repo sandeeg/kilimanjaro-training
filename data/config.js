@@ -262,6 +262,13 @@ window.TREK_CONFIG = {
 
   /* ---- Day-by-day mountain itinerary ------------------------------------
      Distances, durations and camps are transcribed from your document.
+     highPointM is the highest point REACHED during a day, where that is above
+     both camps: Uhuru on day 6, Lava Tower on day 3. Without it the profile
+     draws a straight line between the two camps and never touches the summit.
+     Days 2, 4 and 5 include acclimatisation hikes that also climb above camp,
+     but your document doesn't say how high, so they are left out rather than
+     invented.
+
      ALTITUDES ARE NOT IN YOUR DOCUMENT — the values below are the standard
      published heights for these camps. Check them against your Altezza
      paperwork; they drive the altitude profile chart.                       */
@@ -279,7 +286,7 @@ window.TREK_CONFIG = {
             "especially if you feel fine." },
 
     { day: 3, title: "Shira Camp 2 → Barranco Camp",
-      altStartM: 3850, altEndM: 3960, distanceKm: 10, hours: "6",
+      altStartM: 3850, altEndM: 3960, highPointM: 4630, distanceKm: 10, hours: "6",
       zone: "Alpine Desert",
       note: "Climb high toward Lava Tower (~4,630 m) then descend to camp. Your doc " +
             "flags the downhill. This is the key acclimatisation day of the trek." },
@@ -297,7 +304,7 @@ window.TREK_CONFIG = {
             "sleep early — you're up around midnight." },
 
     { day: 6, title: "Barafu → UHURU PEAK → Barafu → Millennium Camp",
-      altStartM: 4640, altEndM: 3820, distanceKm: 14, hours: "13", summit: true,
+      altStartM: 4640, altEndM: 3820, highPointM: 5895, distanceKm: 14, hours: "13", summit: true,
       zone: "Arctic Summit",
       note: "Summit night. 1,255 m up in the dark to 5,895 m, then all the way down " +
             "to Millennium. Thirteen hours. Everything you've trained for is this day." },
