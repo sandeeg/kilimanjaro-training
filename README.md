@@ -17,51 +17,72 @@ JavaScript. Works in Edge, Chrome, Firefox and Safari, and on a phone.
 > ran a web server. Assigning to `window.TREK_CONFIG` in a `.js` file sidesteps that
 > entirely. Editing them is exactly as easy — it's still just a list of values.
 
-## Change these two things first
+## Where the content comes from
 
-Both are placeholders because the sources needed a login I don't have.
+Everything is now real, from your own "Kilimanjaro Training Calendar — Warm-first training
+plan (Aug–Dec)" document plus Altezza's packing list. Two things are worth knowing:
 
-### 1. `data/config.js` — the trek
+**The dates were shifted by one day.** Every date in your document is a Saturday in 2025 but
+a Sunday in 2026 — the weekend table was built on last year's calendar. Each row moved back
+one day onto the real 2026 Saturday, which maps 1:1 across all 18 weekends. Each card shows
+the original under `doc:` so you can always see what moved.
+
+**Camp altitudes and the day-7 descent are not in your document.** The altitudes are the
+standard published heights for those Lemosho camps, and day 7 is inferred — it's marked as
+such on the trek tab. Check both against your Altezza paperwork.
+
+## The two files to edit
+
+### `data/config.js` — trek, team, and the plan
 
 ```js
 trek: {
-  placeholder: true,          // <- set to false once you've checked the rest
-  route: "Machame Route",
-  startDate: "2026-12-21",    // <- the important one
+  route: "Lemosho / Shira Route",
+  startDate: "2026-12-25",    // Day 1. Drives the countdown and every date.
+  summitDate: "2026-12-30",   // summit night
   ...
 }
 ```
 
-`startDate` drives **everything**. Change it and the number of training weekends, the
-phase split, the taper and the countdown all recompute. Below it, `itinerary` holds the
-day-by-day camps and altitudes — currently a standard 7-day Machame profile. Replace it
-with the real one from your Altezza page.
+Below that, `plannedWeekends` is the actual 18-weekend schedule: hike, why that weekend,
+travel booking, who's away, pack weight. **While that list is non-empty it IS the calendar.**
+Empty it and the site falls back to auto-generating a difficulty ramp from the hike library.
 
-Also in this file: `team` (the four names and their initials) and `training` (which day you hike,
-how heavy the pack gets).
+Also here: `team`, `itinerary` (day-by-day), and `gearMilestones`.
 
-### 2. `data/hikes.js` — the hikes
+### `data/hikes.js` — the 24 hikes
 
-17 hikes, most of them **placeholder archetypes**: the shape of each workout is right
-("a 950 m stair session", "a 25 km mountain day"), the trail names are invented.
+Ten are from your document (Mount Si Old Trail, Poo Poo Point, Granite, Mailbox, Teneriffe,
+Camp Muir, Baldy, Whitney, Elbert, plus the rest day) and fourteen are other main Washington
+trails, available as swaps.
 
-Replace `name`, `area`, `driveMin` and `url` with real trails near you. Keep `distanceKm`,
-`gainM` and `tier` roughly as they are and the calendar keeps working.
+`statsSource` tells you how much to trust the numbers:
 
-`tier` is what matters — it decides which training phase a hike gets offered for:
+| value | meaning |
+|---|---|
+| `"WTA"` | mileage, gain and high point read off the Washington Trails Association page. All 18 WA hikes. Distances are round trip. |
+| `"estimate"` | Baldy, Whitney and Elbert — WTA doesn't cover them. Standard published figures for the usual route. **Confirm before booking.** |
 
-| tier | meaning | used in |
-|---|---|---|
-| 0 | recovery / cross-training | taper |
-| 1 | easy base | base, taper |
-| 2 | moderate | base, build, taper |
-| 3 | hard | build, peak |
-| 4 | very hard | peak |
-| 5 | summit simulation | peak |
+`hours` and `driveMin` are estimates in every case, with drive times from Seattle.
 
-You can also add hikes from inside the site (**Hike library** tab → *Add a hike*). Those
-save to your browser only — hit **Export hikes as JSON** and paste the result into this
-file to make them permanent for everyone.
+`tier` decides which hikes get starred as suited to a phase:
+
+| tier | meaning |
+|---|---|
+| 0 | recovery / cross-training |
+| 1 | easy base |
+| 2 | moderate |
+| 3 | hard |
+| 4 | very hard |
+| 5 | summit simulation, or anything above 2,500 m |
+
+You can also add hikes from inside the site (**Hike library** tab → *Add a hike*). Those save
+to your browser only — hit **Export hikes as JSON** and paste the result into this file to
+make them permanent for everyone.
+
+One thing to keep an eye on: **Mount Whitney needs a day-use permit** from a February lottery
+on recreation.gov, and its quota season runs 1 May – 1 Nov. You've said you have it; the note
+stays on the card so nobody forgets.
 
 ## What's on each tab
 
@@ -121,19 +142,22 @@ at the same path and keep it roughly 3:2 — the hero crops to 16:7 on desktop a
   — fully transcribed into `data/packing.js`. Gear rental prices are on page 8 of the PDF;
   I deliberately didn't copy them across, because the price column didn't extract in a
   reliable item-by-item order and a wrong price is worse than no price.
+- Training plan, trek dates, team and per-person gear gaps:
+  **Kilimanjaro_Training_Calendar.pdf** ("Warm-first training plan, Aug–Dec"). This is the
+  source of record for the calendar.
+- Trail stats: [wta.org](https://www.wta.org) — each hike links to its own page.
 - Itinerary: [story.altezza.travel/itinerary/iqj6ur](https://story.altezza.travel/itinerary/iqj6ur)
-  — **couldn't read this.** It's a JavaScript app whose route requires a signed-in Altezza
-  account; the underlying API returns 401 without one. Hence the placeholder itinerary.
-- The Teams note with your hike options — needs a Microsoft sign-in that wasn't completed.
-  Hence the placeholder hikes.
+  — **still unread.** It's a JavaScript app whose route requires a signed-in Altezza account;
+  the API returns 401 without one. The day-by-day came from your PDF instead.
 
 ## File map
 
 ```
 index.html            the page itself
 css/styles.css        styling, light and dark themes
-data/config.js        trek dates, team, itinerary, gear milestones   <- EDIT FIRST
-data/hikes.js         the hike library                              <- EDIT SECOND
+assets/kilimanjaro.jpg  the hero photo (CC0)
+data/config.js        trek, team, the 18-weekend plan, itinerary     <- EDIT FIRST
+data/hikes.js         the 24 hikes                                   <- EDIT SECOND
 data/packing.js       the Altezza packing list
 js/store.js           saving to and loading from your browser
 js/schedule.js        works out the training calendar from the trek date
