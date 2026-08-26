@@ -217,6 +217,20 @@ window.TREK_HIKES = [
   },
 
   /* ======================================================================
+     ALREADY DONE — not on the plan, but it counts
+     ====================================================================== */
+  {
+    id: "mount-rysy", name: "Mount Rysy — Slovakia to Poland", area: "High Tatras", state: "SK/PL",
+    tier: 5, distanceKm: 36, gainM: 1350, maxAltM: 2503, hours: 11.0, driveMin: 0,
+    terrain: "High alpine, chains near the summit", onPlan: false, placeholder: false,
+    statsSource: "reported", url: "https://en.wikipedia.org/wiki/Rysy",
+    note: "Cross-border traverse over Rysy (2,503 m, the highest point in Poland). 36 km is " +
+          "Sandy's own figure; the 1,350 m gain is my ESTIMATE for the Štrbské Pleso → Rysy → " +
+          "Morskie Oko line — replace it with your watch's number. Longest single day anyone " +
+          "on this trip has done, and real altitude."
+  },
+
+  /* ======================================================================
      RECOVERY & NON-TRAIL DAYS
      ====================================================================== */
   {

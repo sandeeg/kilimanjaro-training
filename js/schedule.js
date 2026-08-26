@@ -360,8 +360,28 @@ var Schedule = (function () {
     };
   }
 
+  /* ---------- hikes already done, outside the planned weekends ---------- */
+
+  function completedLog() {
+    var cfg = window.TREK_CONFIG;
+    return (cfg.completedLog || []).map(function (e) {
+      var hike = hikeById(e.hikeId);
+      return {
+        id: e.id,
+        hike: hike,
+        date: e.date ? parseISO(e.date) : null,
+        dateShort: e.date ? fmtShort(parseISO(e.date)) : null,
+        who: e.who || [],
+        notes: e.notes || '',
+        km: e.actualKm != null ? e.actualKm : (hike ? hike.distanceKm : 0),
+        gain: e.actualGain != null ? e.actualGain : (hike ? hike.gainM : 0)
+      };
+    });
+  }
+
   return {
     DAY_NAMES: DAY_NAMES,
+    completedLog: completedLog,
     toIdx: toIdx,
     fromIdx: fromIdx,
     defaultDayIdx: defaultDayIdx,

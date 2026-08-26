@@ -19,6 +19,14 @@
 
   function num(v) { return Math.round(v).toLocaleString(); }
 
+  /* Distances are small enough that rounding away the decimal loses real
+     information - 53.6 km should not read as 54 km. Whole numbers stay whole. */
+  function km(v) {
+    return (Math.round(v * 10) % 10 === 0)
+      ? Math.round(v).toLocaleString()
+      : (Math.round(v * 10) / 10).toLocaleString(undefined, { minimumFractionDigits: 1 });
+  }
+
   /* Elevation of one Kilimanjaro ascent, gate to summit — used as a fun unit. */
   function kiliAscentM() {
     var it = CFG.itinerary || [];
@@ -91,6 +99,12 @@
   function totals() {
     var planKm = 0, planGain = 0, doneKm = 0, doneGain = 0, doneCount = 0;
 
+    // Hikes done outside the planned weekends count towards what the legs have
+    // actually absorbed, so they go into the logged totals — but NOT into the
+    // plan totals, which represent the 18-weekend schedule only.
+    var logKm = 0, logGain = 0;
+    Schedule.completedLog().forEach(function (e) { logKm += e.km; logGain += e.gain; });
+
     plan.weeks.forEach(function (w) {
       var r = Schedule.resolve(w);
       planKm += w.targetKm;
@@ -104,7 +118,10 @@
 
     return {
       planKm: planKm, planGain: planGain,
-      doneKm: doneKm, doneGain: doneGain,
+      doneKm: doneKm + logKm, doneGain: doneGain + logGain,
+      weekendKm: doneKm, weekendGain: doneGain,
+      logKm: logKm, logGain: logGain,
+      logCount: Schedule.completedLog().length,
       doneCount: doneCount,
       remaining: plan.weeks.length - doneCount
     };
@@ -149,8 +166,9 @@
         foot: plan.trekStartLong ? 'Start: ' + plan.trekStartLong.replace(/^\w+, /, '') : '' },
       { label: 'Weekends left', value: t.remaining, unit: '/ ' + plan.weeks.length,
         foot: t.doneCount + ' logged so far' },
-      { label: 'Distance logged', value: num(t.doneKm), unit: 'km',
-        foot: 'plan totals ' + num(t.planKm) + ' km' },
+      { label: 'Distance logged', value: km(t.doneKm), unit: 'km',
+        foot: t.logKm ? km(t.logKm) + ' km of it before the plan'
+                      : 'plan totals ' + num(t.planKm) + ' km' },
       { label: 'Climbing logged', value: num(t.doneGain), unit: 'm',
         foot: pctGain + '% of the ' + num(t.planGain) + ' m plan' },
       { label: 'Kilimanjaros climbed', value: (t.doneGain / kili).toFixed(1), unit: '×',
@@ -166,14 +184,24 @@
 
     renderChart();
     renderNextUp();
+    renderDoneLog();
     renderTeam();
   }
 
   function chartData() {
     var labels = [], planCum = [], loggedCum = [];
-    var p = 0, l = 0;
-    var lastDone = -1;
-    plan.weeks.forEach(function (w, i) { if (Schedule.resolve(w).done) lastDone = i; });
+    var t = totals();
+    var p = 0;
+    var l = t.logGain;          // start from the hikes already done off-plan
+
+    // Run the logged line as far as the present, not just as far as the last
+    // tick, so a skipped weekend reads as the line going flat.
+    var lastIdx = -1;
+    plan.weeks.forEach(function (w, i) {
+      var r = Schedule.resolve(w);
+      if (r.done || r.isPast) lastIdx = i;
+    });
+    if (lastIdx < 0 && l > 0) lastIdx = 0;
 
     plan.weeks.forEach(function (w, i) {
       var r = Schedule.resolve(w);
@@ -181,9 +209,10 @@
       if (r.done) l += r.actualGain != null ? r.actualGain : (r.hike ? r.hike.gainM : w.targetGain);
       labels.push(r.dateShort.replace(/^\w+,?\s*/, ''));
       planCum.push(p);
-      loggedCum.push(i <= lastDone ? l : null);
+      loggedCum.push(i <= lastIdx ? l : null);
     });
-    return { labels: labels, planCum: planCum, loggedCum: loggedCum, lastDone: lastDone };
+    return { labels: labels, planCum: planCum, loggedCum: loggedCum,
+             lastIdx: lastIdx, base: t.logGain };
   }
 
   function renderChart() {
@@ -196,8 +225,11 @@
 
     $('chartSub').textContent =
       'Metres of ascent, added up week by week. The plan line is what the schedule asks for; ' +
-      'the logged line is what you have actually ticked off.' +
-      (d.lastDone === -1 ? ' Nothing logged yet.' : '');
+      'the logged line is what you have actually done, and it runs to today, so a skipped ' +
+      'weekend shows as a flat stretch.' +
+      (d.base > 0
+        ? ' It starts at ' + num(d.base) + ' m, already banked on hikes done outside the plan.'
+        : '');
 
     var css = getComputedStyle(document.documentElement);
     var c1 = css.getPropertyValue('--series-1').trim() || '#2a78d6';
@@ -265,6 +297,44 @@
     return upcoming.length ? upcoming[0] : undone[0];
   }
 
+  function renderDoneLog() {
+    var log = Schedule.completedLog();
+    var t = totals();
+
+    if (!log.length) {
+      $('logSub').textContent = '';
+      $('doneLog').innerHTML = '<p class="hint">Nothing logged outside the plan yet.</p>';
+      return;
+    }
+
+    $('logSub').textContent =
+      log.length + ' hikes done outside the 18-weekend plan \u2014 ' + km(t.logKm) +
+      ' km and ' + num(t.logGain) + ' m of climbing already in the legs.';
+
+    $('doneLog').innerHTML = log.map(function (e) {
+      var h = e.hike;
+      var everyone = e.who.length === CFG.team.length;
+      return '<div class="itin-day">' +
+        '<div class="itin-day__n" aria-hidden="true">\u2713</div>' +
+        '<div class="itin-day__body">' +
+          '<div class="itin-day__title">' + esc(h ? h.name : e.id) +
+            (h && h.state && h.state !== '\u2014'
+              ? ' <span class="tag">' + esc(h.state) + '</span>' : '') +
+          '</div>' +
+          '<div class="itin-day__facts">' +
+            (e.dateShort ? esc(e.dateShort) + ' \u00b7 '
+                         : '<span class="hint">date not recorded \u00b7 </span>') +
+            '<b>' + e.km + '</b> km \u00b7 <b>' + num(e.gain) + '</b> m up' +
+            (h && h.maxAltM ? ' \u00b7 tops out <b>' + num(h.maxAltM) + '</b> m' : '') +
+          '</div>' +
+          '<div class="itin-day__note">' +
+            (everyone ? 'Everyone' : esc(e.who.map(nameOf).join(', '))) +
+            (e.notes ? ' \u2014 ' + esc(e.notes) : '') +
+          '</div>' +
+        '</div></div>';
+    }).join('');
+  }
+
   function renderTeam() {
     var packTotal = countPackItems();
     $('teamReadiness').innerHTML =
@@ -278,6 +348,9 @@
             hikes++;
             gain += r.actualGain != null ? r.actualGain : (r.hike ? r.hike.gainM : w.targetGain);
           }
+        });
+        Schedule.completedLog().forEach(function (e) {
+          if (e.who.indexOf(p.id) !== -1) { hikes++; gain += e.gain; }
         });
         var packed = Store.packedCount(p.id);
         var pct = packTotal ? Math.round((packed / packTotal) * 100) : 0;

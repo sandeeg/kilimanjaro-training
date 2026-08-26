@@ -180,6 +180,34 @@ window.TREK_CONFIG = {
       notes: "3–5 miles only. Nothing new." }
   ],
 
+  /* ---- HIKES ALREADY DONE ------------------------------------------------
+     Training done outside the planned weekends — earlier in the summer, or on
+     days that don't line up with the schedule. These count towards the totals
+     on the dashboard and towards each person's tally, but they are not part of
+     the 18-weekend plan.
+
+     `date: null` means the date wasn't recorded. Fill it in when you know it
+     and it will show up properly.
+
+     NOTE ON POO POO POINT: reported as "Poo Poo Point, Chirico Trail", which is
+     one hike, not two — the Chirico Trail is the standard route up to Poo Poo
+     Point. Logged once, so the climbing isn't counted twice. If they really
+     were two separate outings, duplicate the entry.                          */
+  completedLog: [
+    { id: "done-little-si", date: null, hikeId: "little-si",
+      who: ["p1", "p2", "p3", "p4"],
+      notes: "" },
+
+    { id: "done-poo-poo", date: null, hikeId: "poo-poo-point",
+      who: ["p1", "p2", "p3", "p4"],
+      notes: "Up the Chirico Trail." },
+
+    { id: "done-rysy", date: null, hikeId: "mount-rysy",
+      who: ["p1"],
+      notes: "36 km across the Slovak/Polish border, over the highest point in " +
+             "Poland. By far the biggest day anyone on this trip has done." }
+  ],
+
   /* ---- Day-by-day mountain itinerary ------------------------------------
      Distances, durations and camps are transcribed from your document.
      ALTITUDES ARE NOT IN YOUR DOCUMENT — the values below are the standard
