@@ -20,6 +20,7 @@
   --series-1:       #2a78d6;   /* plan */
   --series-2:       #eb6834;   /* logged */
   --series-3:       #1baf7a;
+  --series-4:       #4a3aa7;   /* violet — "altitude" phase */
 
   --good:           #0ca30c;
   --warning:        #fab219;
@@ -49,6 +50,7 @@
     --series-1:       #3987e5;
     --series-2:       #d95926;
     --series-3:       #199e70;
+    --series-4:       #9085e9;
     --success-text:   #0ca30c;
     --wash:           rgba(57, 135, 229, 0.12);
     --shadow:         0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -69,6 +71,7 @@
   --series-1:       #3987e5;
   --series-2:       #d95926;
   --series-3:       #199e70;
+  --series-4:       #9085e9;
   --success-text:   #0ca30c;
   --wash:           rgba(57, 135, 229, 0.12);
   --shadow:         0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -288,8 +291,25 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .chip--build { border-color: var(--series-1); color: var(--series-1); }
 .chip--peak  { border-color: var(--series-2); color: var(--series-2); }
 .chip--taper { border-color: var(--text-muted); color: var(--text-muted); }
-.chip--next  { background: var(--series-1); border-color: var(--series-1); color: #fff; }
-.chip--done  { background: var(--good); border-color: var(--good); color: #fff; }
+/* phases from the training document */
+.chip--warm     { border-color: var(--series-2); color: var(--series-2); }
+.chip--altitude { border-color: var(--series-4); color: var(--series-4); }
+.chip--cold     { border-color: var(--series-1); color: var(--series-1); }
+.chip--next   { background: var(--series-1); border-color: var(--series-1); color: #fff; }
+.chip--done   { background: var(--good); border-color: var(--good); color: #fff; }
+.chip--missed { border-color: var(--warning); color: var(--text-secondary); background: rgba(250,178,25,.14); }
+
+.week--past { opacity: .82; }
+.week--past .week__date { color: var(--text-secondary); }
+
+.week__why {
+  font-size: 13px; font-weight: 600;
+  color: var(--phase, var(--text-secondary));
+}
+
+.week__note--absent { color: var(--text-secondary); }
+.week__note--absent b { color: var(--critical); }
+.week__note--trail { padding-top: 2px; border-top: 1px solid var(--grid); }
 
 .week__stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); }
 .week__stats b { color: var(--text-primary); font-variant-numeric: tabular-nums; }

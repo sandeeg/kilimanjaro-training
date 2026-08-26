@@ -235,11 +235,14 @@
         : '');
   }
 
+  /* "Next up" means the soonest weekend still ahead of you that isn't logged.
+     If everything upcoming is logged, fall back to the earliest unlogged past
+     weekend so a skipped hike doesn't silently disappear. */
   function nextWeek() {
-    for (var i = 0; i < plan.weeks.length; i++) {
-      if (!Schedule.resolve(plan.weeks[i]).done) return plan.weeks[i];
-    }
-    return null;
+    var undone = plan.weeks.filter(function (w) { return !Schedule.resolve(w).done; });
+    if (!undone.length) return null;
+    var upcoming = undone.filter(function (w) { return !w.isPast; });
+    return upcoming.length ? upcoming[0] : undone[0];
   }
 
   function renderTeam() {
@@ -269,12 +272,24 @@
   /* ---------- training calendar ---------- */
 
   function renderCalendar() {
-    $('calIntro').textContent = plan.weeks.length
-      ? 'Every ' + ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][CFG.training.primaryDay] +
+    if (!plan.weeks.length) {
+      $('calIntro').textContent = 'Departure is less than a week away — there are no training weekends left to schedule.';
+    } else if (plan.fromPlan) {
+      $('calIntro').innerHTML =
+        'Your own plan, ' + esc(plan.weeks[0].dateShort) + ' to ' +
+        esc(plan.weeks[plan.weeks.length - 1].dateShort) + ' — ' + plan.weeks.length +
+        ' weekends, warm hikes first, altitude trips in the warm windows, cold and snow ' +
+        'saved for last. Every date in your document is a Saturday in 2025 but a Sunday in ' +
+        '2026, so each has been shifted back one day onto the real 2026 Saturday; each card ' +
+        'shows the original under <span class="mono">doc:</span>. Swap any hike with the ' +
+        'dropdown — ★ marks ones suited to that phase. <b>*</b> on a pack weight means it ' +
+        'came from your document.';
+    } else {
+      $('calIntro').textContent =
+        'Every ' + ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][CFG.training.primaryDay] +
         ' from ' + plan.weeks[0].dateShort + ' to ' + plan.weeks[plan.weeks.length - 1].dateShort +
-        '. Base builds the habit, Build adds climbing, Peak is the hard part, Taper backs off. ' +
-        'Swap any hike for another from the library.'
-      : 'Departure is less than a week away — there are no training weekends left to schedule.';
+        '. Base builds the habit, Build adds climbing, Peak is the hard part, Taper backs off.';
+    }
 
     var fPhase = $('filterPhase').value;
     var fDone  = $('filterDone').value;
@@ -298,32 +313,59 @@
       }).join('');
 
       return '' +
-      '<article class="week ' + (r.done ? 'week--done' : '') + ' ' + (isNext ? 'week--next' : '') + '"' +
+      '<article class="week ' + (r.done ? 'week--done' : '') + ' ' + (isNext ? 'week--next' : '') +
+        ' ' + (w.isPast && !r.done ? 'week--past' : '') + '"' +
         ' style="--phase:var(' + phaseVar(w.phase) + ')" data-key="' + w.dateKey + '">' +
 
         '<div class="week__top">' +
           '<div>' +
             '<div class="week__wk">Week ' + w.index + ' / ' + w.total + '</div>' +
             '<div class="week__date">' + esc(w.dateShort) + '</div>' +
-            '<div class="hint">' + w.daysOut + ' days before departure</div>' +
+            '<div class="hint">' +
+              (w.isPast ? 'already passed · ' : '') + w.daysOut + ' days before departure' +
+              (w.docDate ? ' · doc: ' + esc(w.docDate) : '') +
+            '</div>' +
           '</div>' +
           '<div class="week__meta">' +
             (r.done ? '<span class="chip chip--done">Done</span>'
-                    : isNext ? '<span class="chip chip--next">Next up</span>' : '') +
-            '<div style="margin-top:4px"><span class="chip chip--' + w.phase + '">' + w.phase + '</span></div>' +
+                    : isNext ? '<span class="chip chip--next">Next up</span>'
+                    : w.isPast ? '<span class="chip chip--missed">Not logged</span>' : '') +
+            '<div style="margin-top:4px"><span class="chip chip--' + w.phase + '">' + esc(w.phase) + '</span></div>' +
           '</div>' +
         '</div>' +
+
+        (w.why ? '<div class="week__why">' + esc(w.why) + '</div>' : '') +
 
         '<label class="sr-only" for="sel-' + w.dateKey + '">Hike for ' + esc(w.dateShort) + '</label>' +
         '<select id="sel-' + w.dateKey + '" data-act="hike" style="width:100%">' + options + '</select>' +
 
         '<div class="week__stats">' +
-          '<span>target <b>' + w.targetKm + '</b> km</span>' +
+          '<span><b>' + w.targetKm + '</b> km</span>' +
           '<span><b>' + num(w.targetGain) + '</b> m up</span>' +
-          '<span>pack <b>' + w.packKg + '</b> kg</span>' +
+          (r.hike && r.hike.maxAltM ? '<span>tops out <b>' + num(r.hike.maxAltM) + '</b> m</span>' : '') +
+          '<span>pack <b>' + w.packKg + '</b> kg' + (w.packFromDoc ? '*' : '') + '</span>' +
         '</div>' +
 
-        (r.hike && r.hike.note ? '<p class="week__note">' + esc(r.hike.note) + '</p>' : '') +
+        (w.travel ? '<p class="week__note"><b>Travel:</b> ' + esc(w.travel) + '</p>' : '') +
+
+        (w.altFor && w.altFor.people && w.altFor.people.length
+          ? '<p class="week__note"><b>' +
+            esc(w.altFor.people.map(nameOf).join(' & ')) + ':</b> ' +
+            esc((Schedule.allHikes().filter(function (h) { return h.id === w.altFor.hikeId; })[0] || {}).name ||
+                w.altFor.hikeId) + ' instead.</p>'
+          : '') +
+
+        (w.absent && w.absent.length
+          ? '<p class="week__note week__note--absent"><b>Missing:</b> ' +
+            esc(w.absent.map(nameOf).join(', ')) +
+            (w.absentWhy ? ' — ' + esc(w.absentWhy) : '') + '</p>'
+          : '') +
+
+        (w.planNotes ? '<p class="week__note"><b>Note:</b> ' + esc(w.planNotes) + '</p>' : '') +
+
+        (r.hike && r.hike.note ? '<p class="week__note week__note--trail">' + esc(r.hike.note) +
+          (r.hike.url ? ' <a href="' + esc(r.hike.url) + '" target="_blank" rel="noopener">details ↗</a>' : '') +
+          '</p>' : '') +
 
         (w.second && !r.done
           ? '<p class="week__note"><b>' + esc(w.secondDateShort) + ':</b> back-to-back second day — ' +
@@ -365,8 +407,16 @@
   }
 
   function phaseVar(p) {
-    return p === 'base' ? '--series-3' : p === 'build' ? '--series-1'
-         : p === 'peak' ? '--series-2' : '--text-muted';
+    var map = {
+      base: '--series-3', build: '--series-1', peak: '--series-2',
+      warm: '--series-2', altitude: '--series-4', cold: '--series-1'
+    };
+    return map[p] || '--text-muted';
+  }
+
+  function nameOf(personId) {
+    var m = CFG.team.filter(function (p) { return p.id === personId; });
+    return m.length ? m[0].name : personId;
   }
 
   /* One delegated listener for the whole calendar — simpler than wiring

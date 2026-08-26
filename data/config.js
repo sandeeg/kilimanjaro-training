@@ -4,97 +4,229 @@
    Everything the site shows is driven from here. Change a value, save, reload
    the page in your browser. No build step, no npm, nothing to install.
 
-   Anything marked  placeholder: true  is a guess I made because the source was
-   locked behind a login. Replace it with the real thing and set it to false.
+   Trek dates, route, names and the day-by-day now come from your own document,
+   "Kilimanjaro Training Calendar — Warm-first training plan (Aug–Dec)".
    ========================================================================== */
 
 window.TREK_CONFIG = {
 
   /* ---- The trek itself ---------------------------------------------------
-     startDate drives the WHOLE training calendar. Change it and every weekend,
-     phase and taper recomputes automatically.
-     Format is always "YYYY-MM-DD".                                          */
+     From your document: Day 1 = Dec 25, summit night = Day 6, Dec 30.
+     The camps listed (Shira 1, Shira 2, Barranco, Karanga, Barafu,
+     Millennium) are the Lemosho / Shira route, and a 2-hour 3.5 km first day
+     to Shira Camp 1 means you're driving in to Morum Barrier rather than
+     walking up from Londorossi Gate.
+
+     Two things your document does NOT state, so I've supplied them and marked
+     them below: camp ALTITUDES, and a Day 7 descent to the gate.            */
   trek: {
-    placeholder: true,            // <-- set false once you've confirmed below
+    placeholder: false,
     operator: "Altezza Travel",
-    route: "Machame Route",
-    days: 7,
-    startDate: "2026-12-21",      // first day on the mountain
-    endDate: "2026-12-28",
-    summitDate: "2026-12-26",     // summit night / Uhuru Peak day
+    route: "Lemosho / Shira Route",
+    days: 7,                       // 6 in your doc + the inferred descent day
+    startDate: "2026-12-25",       // Day 1 per your document
+    endDate: "2026-12-31",         // inferred — your doc stops at Day 6
+    summitDate: "2026-12-30",      // Day 6, summit night
     summitAltitudeM: 5895,
     itineraryUrl: "https://story.altezza.travel/itinerary/iqj6ur",
     packingListUrl: "https://altezzatravel.com/kilimanjaro-packing-list.pdf",
-    duffleLimitKg: 15             // porter weight limit, from the packing list
+    duffleLimitKg: 15
   },
 
   /* ---- Who's going ------------------------------------------------------
-     Each person gets their own packing checklist and can be ticked off on
-     each training hike.                                                     */
+     Full names from the packing table in your document.                     */
   team: [
-    { id: "p1", name: "Sandy",  initials: "SY" },
-    { id: "p2", name: "Poonam", initials: "P"  },
-    { id: "p3", name: "Ramita", initials: "R"  },
-    { id: "p4", name: "Sandeep",initials: "S"  }
+    { id: "p1", name: "Sandy Gupta",   initials: "SG" },
+    { id: "p2", name: "Poonam Gupta",  initials: "PG" },
+    { id: "p3", name: "Ramita Singh",  initials: "RS" },
+    { id: "p4", name: "Sandeep Singh", initials: "SS" }
   ],
 
   /* ---- How training is scheduled ---------------------------------------- */
   training: {
-    // 0 = Sunday, 1 = Monday ... 6 = Saturday. Your main weekly hike day.
+    // 0 = Sunday, 1 = Monday ... 6 = Saturday.
+    // Your document times the hikes on the first day of each weekend pair
+    // (e.g. "Aug 23 – 09:00AM–01:00PM"), i.e. Saturdays.
     primaryDay: 6,
 
-    // In the Peak phase, add a second (shorter) hike the next day. Back-to-back
-    // days are the single best simulation of consecutive trekking days.
+    // In the Peak phase, add a second (shorter) hike the next day.
     backToBackInPeak: true,
 
-    // Pack weight progression, in kg. On Kilimanjaro your daypack is ~6-8 kg
-    // (water, layers, snacks, camera). Train above that so it feels easy.
-    startPackKg: 4,
-    peakPackKg: 10,
+    // Pack weight progression, in kg. Your document calls for 15–20 lb on the
+    // opening weekend and 25 lb by mid-October — that's ~7 kg to ~11 kg.
+    startPackKg: 7,
+    peakPackKg: 11,
 
     // Fraction of the run-up spent in each phase. Must add up to 1.
+    // Only used if plannedWeekends below is empty.
     phaseSplit: { base: 0.20, build: 0.30, peak: 0.30, taper: 0.20 }
   },
 
+  /* ---- THE ACTUAL PLAN --------------------------------------------------
+     Transcribed from the weekend table in your training document.
+
+     DATE SHIFT: every date in your document is a Saturday in 2025 but a
+     Sunday in 2026 — the table was built on last year's calendar. Each row
+     has been moved back one day onto the real 2026 Saturday, which maps 1:1
+     across all 18 weekends (doc "Aug 23-24" -> Sat Aug 22, 2026). `docDate`
+     keeps the original so you can always see what moved.
+
+     While this list is non-empty it IS the calendar; the automatic
+     difficulty-ramp generator is only used if you empty it.
+
+     packKg: your document states pack weight on two weekends only — "15-20 lb"
+     on the first and "Add 25 lb" from Oct 18. Those two are marked
+     packFromDoc: true. The rest are a sensible fill; change freely.         */
+  plannedWeekends: [
+    { date: "2026-08-22", docDate: "Aug 23–24", hikeId: "mount-si-old",
+      phase: "warm", packKg: 8, packFromDoc: true,
+      why: "Warm baseline test",
+      notes: "15–20 lb pack.",
+      altFor: { hikeId: "poo-poo-point", people: ["p3", "p4"] } },
+
+    { date: "2026-08-29", docDate: "Aug 30–31", hikeId: "granite-mountain",
+      phase: "warm", packKg: 8,
+      why: "Warm, dry scree practice",
+      notes: "Hydrate well — the upper slope has no shade at all." },
+
+    { date: "2026-09-05", docDate: "Sep 6–7", hikeId: "mailbox-peak",
+      phase: "warm", packKg: 8,
+      why: "Warm-season steep grind",
+      notes: "No snow yet." },
+
+    { date: "2026-09-12", docDate: "Sep 13–14", hikeId: "mount-teneriffe",
+      phase: "warm", packKg: 8,
+      why: "Warm, dry conditions",
+      notes: "Long ascent.",
+      absent: ["p4"],
+      absentWhy: "Sandeep — CA for Dreamforce, 13–18 Sep. The Saturday shift now puts " +
+                 "this hike the day before he flies, so he may be able to make it." },
+
+    { date: "2026-09-19", docDate: "Sep 20–21", hikeId: "mount-baldy",
+      phase: "altitude", packKg: 9,
+      why: "Warm SoCal altitude",
+      travel: "Fly LAX",
+      notes: "Cheap flight. Sandeep can reposition SFO→LAX on the 18th." },
+
+    { date: "2026-09-26", docDate: "Sep 27–28", hikeId: "camp-muir",
+      phase: "altitude", packKg: 9,
+      why: "Still warm enough; minimal snow",
+      notes: "Best local altitude — 10,080 ft without getting on a plane." },
+
+    { date: "2026-10-03", docDate: "Oct 4–5", hikeId: "mount-whitney",
+      phase: "altitude", packKg: 9,
+      why: "Ideal weather window",
+      travel: "Fly BIH, LAX or RNO",
+      notes: "14,505 ft. Permit secured. Biggest single day of the whole plan — " +
+             "longer and higher than Kilimanjaro's summit day." },
+
+    { date: "2026-10-10", docDate: "Oct 11–12", hikeId: "mount-elbert",
+      phase: "altitude", packKg: 9,
+      why: "Warm fall conditions",
+      travel: "Fly DEN",
+      notes: "Thin-air training. Start before dawn — afternoon lightning is the real risk." },
+
+    { date: "2026-10-17", docDate: "Oct 18–19", hikeId: "granite-mountain",
+      phase: "warm", packKg: 11, packFromDoc: true,
+      why: "Still warm; build volume",
+      notes: "Add 25 lb pack.",
+      absent: ["p3", "p4"],
+      absentWhy: "Ramita and Sandeep — Purdue parents' weekend." },
+
+    { date: "2026-10-24", docDate: "Oct 25–26", hikeId: "mount-si-old",
+      phase: "warm", packKg: 11,
+      why: "Warm-season endurance",
+      notes: "Faster pacing than August — same hill, less time." },
+
+    { date: "2026-10-31", docDate: "Nov 1–2", hikeId: "mailbox-peak",
+      phase: "warm", packKg: 11,
+      why: "Cooler but not snowy yet",
+      notes: "Mental toughness." },
+
+    { date: "2026-11-07", docDate: "Nov 8–9", hikeId: "mount-teneriffe",
+      phase: "cold", packKg: 11,
+      why: "Shoulder-season training",
+      notes: "Great descent control — this is the day-7 rehearsal." },
+
+    { date: "2026-11-14", docDate: "Nov 15–16", hikeId: "camp-muir",
+      phase: "cold", packKg: 11,
+      why: "First cold exposure",
+      notes: "Light snow likely. First real test of the summit layering system." },
+
+    { date: "2026-11-21", docDate: "Nov 22–23", hikeId: "mailbox-peak",
+      phase: "cold", packKg: 11,
+      why: "Snow practice",
+      notes: "Microspikes." },
+
+    { date: "2026-11-28", docDate: "Nov 29–30", hikeId: "mount-si-old",
+      phase: "cold", packKg: 11,
+      why: "Cold-weather pacing",
+      notes: "Mimics Kili summit night." },
+
+    { date: "2026-12-05", docDate: "Dec 6–7", hikeId: "camp-muir",
+      phase: "cold", packKg: 11,
+      why: "Final cold/wind prep",
+      notes: "Closest to Kili conditions you will get in Washington." },
+
+    { date: "2026-12-12", docDate: "Dec 13–14", hikeId: "granite-mountain",
+      phase: "taper", packKg: 9,
+      why: "Taper weekend",
+      notes: "Your doc says \"Granite or Teneriffe\" — swap with the dropdown. " +
+             "Keep effort moderate." },
+
+    { date: "2026-12-19", docDate: "Dec 20–21", hikeId: "rest-light",
+      phase: "taper", packKg: 4,
+      why: "Recovery",
+      notes: "3–5 miles only. Nothing new." }
+  ],
+
   /* ---- Day-by-day mountain itinerary ------------------------------------
-     PLACEHOLDER: a standard 7-day Machame profile. The real numbers are in
-     your Altezza link — paste them over these and set trek.placeholder=false.
-     altStartM / altEndM are used to draw the altitude profile.              */
+     Distances, durations and camps are transcribed from your document.
+     ALTITUDES ARE NOT IN YOUR DOCUMENT — the values below are the standard
+     published heights for these camps. Check them against your Altezza
+     paperwork; they drive the altitude profile chart.                       */
   itinerary: [
-    { day: 1, title: "Machame Gate → Machame Camp",
-      altStartM: 1800, altEndM: 3010, distanceKm: 11, hours: "5–7",
-      zone: "Rainforest",
-      note: "Humid, often raining. Poncho on top of everything." },
-
-    { day: 2, title: "Machame Camp → Shira Cave Camp",
-      altStartM: 3010, altEndM: 3850, distanceKm: 5, hours: "4–6",
+    { day: 1, title: "Morum Barrier → Shira Camp 1",
+      altStartM: 3500, altEndM: 3610, distanceKm: 3.5, hours: "2",
       zone: "Heath & Moorland",
-      note: "Short day. Big altitude gain — walk deliberately slowly." },
+      note: "Short first day — you drive up to the barrier. Walk it slowly anyway; " +
+            "you're starting higher than most routes finish day 2." },
 
-    { day: 3, title: "Shira → Lava Tower → Barranco Camp",
-      altStartM: 3850, altEndM: 3960, distanceKm: 10, hours: "6–8",
+    { day: 2, title: "Shira Camp 1 → Shira Camp 2",
+      altStartM: 3610, altEndM: 3850, distanceKm: 10, hours: "4",
+      zone: "Heath & Moorland",
+      note: "Plus an acclimatisation hike. Go on it even if you feel fine — " +
+            "especially if you feel fine." },
+
+    { day: 3, title: "Shira Camp 2 → Barranco Camp",
+      altStartM: 3850, altEndM: 3960, distanceKm: 10, hours: "6",
       zone: "Alpine Desert",
-      note: "Climb to 4,630 m then sleep low. The key acclimatisation day." },
+      note: "Climb high toward Lava Tower (~4,630 m) then descend to camp. Your doc " +
+            "flags the downhill. This is the key acclimatisation day of the trek." },
 
-    { day: 4, title: "Barranco Wall → Karanga Camp",
-      altStartM: 3960, altEndM: 4035, distanceKm: 5, hours: "4–5",
+    { day: 4, title: "Barranco Camp → Karanga Camp",
+      altStartM: 3960, altEndM: 4035, distanceKm: 6, hours: "4",
       zone: "Alpine Desert",
-      note: "Scrambling on the Wall. Poles stowed, hands free." },
+      note: "Four hours uphill for 75 m of net gain — that's the Barranco Wall. " +
+            "Poles stowed, hands free. Plus an acclimatisation hike." },
 
-    { day: 5, title: "Karanga Camp → Barafu Camp",
-      altStartM: 4035, altEndM: 4640, distanceKm: 4, hours: "4–5",
+    { day: 5, title: "Karanga Camp → Barafu Summit Camp",
+      altStartM: 4035, altEndM: 4640, distanceKm: 4, hours: "4",
       zone: "Alpine Desert",
-      note: "Eat and sleep early. Summit push starts around midnight." },
+      note: "Short but you're high now. Plus an acclimatisation hike. Eat, then " +
+            "sleep early — you're up around midnight." },
 
-    { day: 6, title: "Barafu → UHURU PEAK → Mweka Camp",
-      altStartM: 4640, altEndM: 3100, distanceKm: 17, hours: "12–16",
-      zone: "Arctic Summit", summit: true,
-      note: "Summit day: 1,255 m up in the dark, then 2,795 m down. This is the day all the training is for." },
+    { day: 6, title: "Barafu → UHURU PEAK → Barafu → Millennium Camp",
+      altStartM: 4640, altEndM: 3820, distanceKm: 14, hours: "13", summit: true,
+      zone: "Arctic Summit",
+      note: "Summit night. 1,255 m up in the dark to 5,895 m, then all the way down " +
+            "to Millennium. Thirteen hours. Everything you've trained for is this day." },
 
-    { day: 7, title: "Mweka Camp → Mweka Gate",
-      altStartM: 3100, altEndM: 1640, distanceKm: 10, hours: "3–4",
+    { day: 7, title: "Millennium Camp → Mweka Gate",
+      altStartM: 3820, altEndM: 1640, distanceKm: 12, hours: "4–5",
       zone: "Rainforest",
-      note: "Long descent on tired quads. Certificates at the gate." }
+      note: "NOT IN YOUR DOCUMENT — inferred descent day. Long drop on wrecked quads; " +
+            "this is what the Teneriffe descent practice was for. Confirm with Altezza." }
   ],
 
   /* ---- Gear-testing milestones ------------------------------------------
@@ -104,7 +236,7 @@ window.TREK_CONFIG = {
     { at: 0.05, title: "Wear your boots. All day.",
       detail: "Start breaking them in now. Blisters on Kilimanjaro end summit attempts." },
     { at: 0.18, title: "Hike with trekking poles",
-      detail: "Both poles, whole hike. Learn the downhill technique — it saves your knees on day 7." },
+      detail: "Both poles, whole hike. Learn the downhill technique — it saves your knees." },
     { at: 0.30, title: "Test the rain shell + poncho",
       detail: "Go out in actual rain on purpose. Better to find the leak here." },
     { at: 0.45, title: "Full daypack, 8 kg",
@@ -113,8 +245,8 @@ window.TREK_CONFIG = {
       detail: "Bite valves freeze. Learn to blow water back down the tube." },
     { at: 0.70, title: "Wear the full summit layering system",
       detail: "Thermals + fleece + insulated jacket + mittens. On a cold morning, uphill." },
-    { at: 0.82, title: "Day hike above 2,500 m if you can reach it",
-      detail: "Any real altitude exposure helps. Note how you sleep afterwards." },
+    { at: 0.82, title: "Microspikes on real snow",
+      detail: "Your plan schedules snow hikes from late November. Fit them before you need them." },
     { at: 0.90, title: "Pack the duffle and weigh it",
       detail: "Hard limit is 15 kg for the porter. Weigh it, then take things out." },
     { at: 1.00, title: "Nothing new. Rest.",

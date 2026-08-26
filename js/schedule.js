@@ -55,7 +55,19 @@ var Schedule = (function () {
     base:  'Get the habit and the boots sorted. Comfortable, talkable pace.',
     build: 'Add real climbing. This is where the legs are made.',
     peak:  'The hardest weekends of the plan. Big days, full pack, back-to-back.',
-    taper: 'Load comes off, sharpness stays. Nothing new, nothing heroic.'
+    taper: 'Load comes off, sharpness stays. Nothing new, nothing heroic.',
+    // Phases from your own document's "Training Focus" table.
+    warm:     'Warm hikes first — build the engine while the trails are dry.',
+    altitude: 'Altitude trips during the warm windows: California and Colorado.',
+    cold:     'Cold and snow only in the late season, closest to Kili conditions.'
+  };
+
+  // Which tiers each phase will offer in the hike dropdown. The document-driven
+  // phases are deliberately wide: the hike is already chosen, and you should be
+  // able to swap in anything sensible if the weather or a permit falls through.
+  var PHASE_TIERS = {
+    base: [1, 2], build: [2, 3], peak: [3, 4, 5], taper: [0, 1, 2],
+    warm: [2, 3, 4], altitude: [4, 5], cold: [3, 4, 5]
   };
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -100,6 +112,81 @@ var Schedule = (function () {
     return use[weekIndex % use.length];
   }
 
+  function hikeById(id) {
+    var found = allHikes().filter(function (h) { return h.id === id; });
+    return found.length ? found[0] : null;
+  }
+
+  /* ---------- fixed plan from config.plannedWeekends ----------
+     When the document's own schedule is present, that IS the calendar. Past
+     weekends are kept rather than dropped, so an already-completed hike can
+     still be logged. Targets come from the chosen hike's real stats rather
+     than an interpolated ramp.                                              */
+
+  function buildFromPlan(cfg, trekStart, today) {
+    var entries = cfg.plannedWeekends.slice().sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+    });
+    var n = entries.length;
+
+    var milestoneFor = {};
+    (cfg.gearMilestones || []).forEach(function (m) {
+      var i = Math.min(n - 1, Math.max(0, Math.round(m.at * (n - 1))));
+      while (milestoneFor[i] !== undefined && i < n - 1) i++;
+      milestoneFor[i] = m;
+    });
+
+    var weeks = entries.map(function (e, i) {
+      var d = parseISO(e.date);
+      var hike = hikeById(e.hikeId);
+      var phase = e.phase || 'warm';
+
+      return {
+        index: i + 1,
+        total: n,
+        date: d,
+        dateKey: e.date,
+        dateShort: fmtShort(d),
+        dateLong: fmtLong(d),
+        docDate: e.docDate || null,
+        phase: phase,
+        phaseBlurb: PHASE_BLURB[phase] || '',
+        // The plan fixes the hike, so the "target" is simply what that hike is.
+        targetKm: hike ? hike.distanceKm : 0,
+        targetGain: hike ? hike.gainM : 0,
+        packKg: e.packKg != null ? e.packKg : 8,
+        packFromDoc: !!e.packFromDoc,
+        suggested: hike,
+        second: null,
+        secondDate: null,
+        secondDateShort: null,
+        milestone: milestoneFor[i] || null,
+        daysOut: daysBetween(d, trekStart),
+        isPast: d < today,
+        allowedTiers: PHASE_TIERS[phase] || [1, 2, 3, 4, 5],
+        // straight from the document
+        why: e.why || null,
+        planNotes: e.notes || null,
+        travel: e.travel || null,
+        absent: e.absent || [],
+        absentWhy: e.absentWhy || null,
+        altFor: e.altFor || null,
+        fromPlan: true
+      };
+    });
+
+    return {
+      weeks: weeks,
+      totalWeeks: n,
+      trekStart: trekStart,
+      trekStartLong: fmtLong(trekStart),
+      today: today,
+      daysToTrek: daysBetween(today, trekStart),
+      tooLate: false,
+      fromPlan: true
+    };
+  }
+
   /* ---------- the build ---------- */
 
   function build() {
@@ -107,6 +194,10 @@ var Schedule = (function () {
     var t = cfg.training;
     var trekStart = parseISO(cfg.trek.startDate);
     var today = midnight(new Date());
+
+    if (cfg.plannedWeekends && cfg.plannedWeekends.length) {
+      return buildFromPlan(cfg, trekStart, today);
+    }
 
     // Every occurrence of the chosen weekday strictly after today and strictly
     // before departure. (Departure week itself is rest.)
