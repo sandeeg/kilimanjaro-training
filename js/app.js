@@ -899,10 +899,55 @@
       '</span></div></div>';
   }
 
+  function renderHotels() {
+    var h = CFG.hotels;
+    if (!h || !h.istanbul) { $('hotelsSub').textContent = ''; $('hotels').innerHTML = ''; return; }
+
+    var ist = h.istanbul;
+    var conf = Store.getHotelRef('istanbul');
+    var confText = conf ? conf : ist.confirmationMask;
+    var isReal = !!conf;
+
+    $('hotelsSub').innerHTML =
+      esc(ist.name) + '. ' +
+      (isReal
+        ? 'Confirmation reference stored in this browser only.'
+        : 'Confirmation reference not published here — enter it locally for check-in.');
+
+    $('hotels').innerHTML =
+      '<div style="padding:12px 0">' +
+        '<div style="margin-bottom:10px">' +
+          '<div><b>' + esc(ist.name) + '</b></div>' +
+          '<div class="hint">' + esc(ist.address) + '</div>' +
+          '<div class="hint">' + esc(ist.phone) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:10px">' +
+          '<div><b>Check-in</b> ' + esc(ist.checkInDate) + ' at ' + esc(ist.checkInTime.slice(0,5)) + '</div>' +
+          '<div><b>Check-out</b> ' + esc(ist.checkOutDate) + ' at ' + esc(ist.checkOutTime.slice(0,5)) + '</div>' +
+          '<div class="hint">' + esc(ist.roomType) + ', ' + esc(ist.guests) + ', ' + ist.nights + ' night</div>' +
+        '</div>' +
+        '<div style="margin-bottom:10px">' +
+          '<label class="hint" for="hotel-conf">Confirmation</label>' +
+          '<div style="display:flex; gap:8px; margin-top:4px">' +
+            '<input id="hotel-conf" class="pnrinput" type="text" maxlength="12"' +
+              ' placeholder="' + esc(ist.confirmationMask) + '"' +
+              ' value="' + (isReal ? esc(confText) : '') + '"' +
+              ' data-hotel-conf="1">' +
+          '</div>' +
+        '</div>' +
+        '<div class="hint"><em>' + esc(ist.note) + '</em></div>' +
+      '</div>';
+  }
+
   function initFlightEvents() {
     $('flights').addEventListener('change', function (e) {
       var key = e.target.getAttribute && e.target.getAttribute('data-pnr');
       if (key) Store.setPnr(key, e.target.value);
+    });
+
+    $('hotels').addEventListener('change', function (e) {
+      var h = e.target.closest('[data-hotel-conf]');
+      if (h) Store.setHotelRef('istanbul', e.target.value);
     });
   }
 
@@ -1243,6 +1288,7 @@
     renderPacking();
     renderItinerary();
     renderFlights();
+    renderHotels();
     CFG.team.forEach(function (p) { rebuildPreview(p.id); });
     renderGarmin();
   }
@@ -1273,6 +1319,7 @@
       renderHikes();
       renderPacking();
       renderFlights();
+      renderHotels();
       CFG.team.forEach(function (p) { rebuildPreview(p.id); });
       renderGarmin();
     });
