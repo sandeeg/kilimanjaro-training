@@ -490,12 +490,18 @@
             '<input type="checkbox" data-act="done"' + (r.done ? ' checked' : '') + '>' +
             '<span>Completed</span>' +
           '</label>' +
-          '<div class="people" style="margin-left:auto" role="group" aria-label="Who came on ' + esc(w.dateShort) + '">' +
-            CFG.team.map(function (p) {
-              return '<button type="button" class="person" data-act="who" data-person="' + esc(p.id) + '"' +
-                     ' aria-pressed="' + (r.who.indexOf(p.id) !== -1 ? 'true' : 'false') + '"' +
-                     ' title="' + esc(p.name) + '">' + esc(p.initials) + '</button>';
-            }).join('') +
+          '<div style="margin-left:auto; display:flex; gap:8px; align-items:center">' +
+            '<span class="hint" style="margin:0">Team doing this:</span>' +
+            '<div class="people" role="group" aria-label="Who is doing the hike on ' + esc(w.dateShort) + '">' +
+              CFG.team.map(function (p) {
+                var isGoing = r.who.indexOf(p.id) !== -1;
+                return '<button type="button" class="person" data-act="who" data-person="' + esc(p.id) + '"' +
+                       ' aria-pressed="' + (isGoing ? 'true' : 'false') + '"' +
+                       ' title="' + esc(p.name) + '" style="' +
+                       (isGoing ? 'background:var(--series-1);color:white;font-weight:bold' : '') + '">' +
+                       esc(p.initials) + '</button>';
+              }).join('') +
+            '</div>' +
           '</div>' +
         '</div>' +
 
