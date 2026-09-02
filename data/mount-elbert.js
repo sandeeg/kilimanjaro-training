@@ -25,7 +25,7 @@ window.MOUNT_ELBERT_GEAR = {
       items: [
         { item: "Base layer (thermal underwear)", note: "Long-sleeve + pants" },
         { item: "Mid layer (fleece jacket)", note: "Warmth without bulk" },
-        { item: "Insulated jacket", note: "Summit night gets cold at 14k ft" },
+        { item: "Down jacket", note: "Peak gets cold at 14,440 ft even on day hike" },
         { item: "Rain jacket (hardshell, waterproof)", note: "Afternoon thunderstorms" },
         { item: "Rain pants (waterproof)", note: "Protection from heavy rain/sleet" },
         { item: "Waterproof poncho", note: "Optional but good for quick storms" }
