@@ -5,7 +5,6 @@
 (function () {
 
   var CFG = window.TREK_CONFIG;
-  var GEAR = window.MOUNT_ELBERT_GEAR;
 
   var MountElbertPrep = (function () {
 
@@ -72,6 +71,12 @@
       render: function () {
         var contentDiv = document.getElementById('elbertChecklistContent');
         if (!contentDiv) return;
+
+        var GEAR = window.MOUNT_ELBERT_GEAR;
+        if (!GEAR || !GEAR.categories) {
+          contentDiv.innerHTML = '<p>Gear data not loaded yet.</p>';
+          return;
+        }
 
         initStore();
         contentDiv.innerHTML = '';
