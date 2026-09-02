@@ -8,8 +8,8 @@
 
   var MountElbertPrep = (function () {
 
-    function neededKey(category, item, personId) {
-      return category + '::' + item + '::' + personId + '::needed';
+    function neededKey(category, item) {
+      return category + '::' + item + '::needed';
     }
 
     function initStore() {
@@ -22,15 +22,15 @@
     }
 
     return {
-      getNeeded: function (category, item, personId) {
+      getNeeded: function (category, item) {
         initStore();
-        var k = neededKey(category, item, personId);
+        var k = neededKey(category, item);
         return Store.all.mountElbert.needed[k] || 'yes'; // default to needed
       },
 
-      setNeeded: function (category, item, personId, needed) {
+      setNeeded: function (category, item, needed) {
         initStore();
-        var k = neededKey(category, item, personId);
+        var k = neededKey(category, item);
         if (needed === 'yes' || needed === true) {
           Store.all.mountElbert.needed[k] = 'yes';
         } else {
@@ -88,94 +88,59 @@
 
           cat.items.forEach(function (itemObj) {
             var itemDiv = document.createElement('div');
+            itemDiv.style.display = 'grid';
+            itemDiv.style.gridTemplateColumns = '1fr 150px';
+            itemDiv.style.alignItems = 'center';
+            itemDiv.style.gap = '12px';
+            itemDiv.style.padding = '12px';
             itemDiv.style.borderBottom = '1px solid var(--border)';
-            itemDiv.style.paddingBottom = '16px';
-            itemDiv.style.marginBottom = '16px';
+            itemDiv.style.borderRadius = '4px';
 
-            var itemHeader = document.createElement('div');
-            itemHeader.style.marginBottom = '12px';
+            var itemInfo = document.createElement('div');
+            itemInfo.style.display = 'flex';
+            itemInfo.style.flexDirection = 'column';
+            itemInfo.style.gap = '2px';
 
             var itemName = document.createElement('div');
             itemName.style.fontWeight = '600';
             itemName.style.fontSize = '0.95em';
             itemName.textContent = itemObj.item;
-            itemHeader.appendChild(itemName);
+            itemInfo.appendChild(itemName);
 
             var itemNote = document.createElement('div');
             itemNote.style.fontSize = '0.8em';
             itemNote.style.opacity = '0.7';
-            itemNote.style.marginTop = '2px';
             itemNote.textContent = itemObj.note;
-            itemHeader.appendChild(itemNote);
+            itemInfo.appendChild(itemNote);
 
-            itemDiv.appendChild(itemHeader);
+            itemDiv.appendChild(itemInfo);
 
-            var personsGrid = document.createElement('div');
-            personsGrid.style.display = 'grid';
-            personsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))';
-            personsGrid.style.gap = '16px';
+            // Needed/Not Needed status
+            var neededSelect = document.createElement('select');
+            neededSelect.style.padding = '6px 8px';
+            neededSelect.style.borderRadius = '4px';
+            neededSelect.style.border = '1px solid var(--border)';
+            neededSelect.style.fontSize = '0.9em';
+            neededSelect.style.fontWeight = '500';
 
-            CFG.team.forEach(function (person) {
-              var personField = document.createElement('div');
-              personField.style.display = 'flex';
-              personField.style.flexDirection = 'column';
-              personField.style.gap = '8px';
-              personField.style.padding = '12px';
-              personField.style.borderRadius = '4px';
-              personField.style.backgroundColor = 'var(--bg-muted)';
+            var yesOpt = document.createElement('option');
+            yesOpt.value = 'yes';
+            yesOpt.textContent = 'Yes, needed';
+            neededSelect.appendChild(yesOpt);
 
-              var label = document.createElement('label');
-              label.style.fontSize = '0.85em';
-              label.style.fontWeight = '600';
-              label.style.opacity = '0.9';
-              label.textContent = person.name;
-              personField.appendChild(label);
+            var noOpt = document.createElement('option');
+            noOpt.value = 'no';
+            noOpt.textContent = 'No, skip it';
+            neededSelect.appendChild(noOpt);
 
-              // Needed/Not Needed status
-              var neededContainer = document.createElement('div');
-              neededContainer.style.display = 'flex';
-              neededContainer.style.gap = '8px';
-              neededContainer.style.alignItems = 'center';
+            var currentNeeded = MountElbertPrep.getNeeded(cat.name, itemObj.item);
+            neededSelect.value = currentNeeded;
 
-              var neededLabel = document.createElement('label');
-              neededLabel.style.fontSize = '0.75em';
-              neededLabel.style.opacity = '0.7';
-              neededLabel.style.textTransform = 'uppercase';
-              neededLabel.style.letterSpacing = '0.5px';
-              neededLabel.textContent = 'Need it:';
-              neededContainer.appendChild(neededLabel);
-
-              var neededSelect = document.createElement('select');
-              neededSelect.style.padding = '4px 8px';
-              neededSelect.style.borderRadius = '3px';
-              neededSelect.style.border = '1px solid var(--border)';
-              neededSelect.style.fontSize = '0.85em';
-              neededSelect.style.minWidth = '110px';
-
-              var yesOpt = document.createElement('option');
-              yesOpt.value = 'yes';
-              yesOpt.textContent = 'Yes, needed';
-              neededSelect.appendChild(yesOpt);
-
-              var noOpt = document.createElement('option');
-              noOpt.value = 'no';
-              noOpt.textContent = 'No, skip it';
-              neededSelect.appendChild(noOpt);
-
-              var currentNeeded = MountElbertPrep.getNeeded(cat.name, itemObj.item, person.id);
-              neededSelect.value = currentNeeded;
-
-              neededSelect.addEventListener('change', function (e) {
-                MountElbertPrep.setNeeded(cat.name, itemObj.item, person.id, e.target.value);
-              });
-
-              neededContainer.appendChild(neededSelect);
-              personField.appendChild(neededContainer);
-
-              personsGrid.appendChild(personField);
+            neededSelect.addEventListener('change', function (e) {
+              MountElbertPrep.setNeeded(cat.name, itemObj.item, e.target.value);
             });
 
-            itemDiv.appendChild(personsGrid);
+            itemDiv.appendChild(neededSelect);
             itemsDiv.appendChild(itemDiv);
           });
 
