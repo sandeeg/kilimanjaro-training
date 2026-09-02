@@ -39,20 +39,28 @@
         this.save();
       },
 
-      addCustomItem: function (itemName, note) {
+      addCustomItem: function (category, itemName, note) {
         initStore();
         if (!Store.all.mountElbert.customItems) {
           Store.all.mountElbert.customItems = [];
         }
-        Store.all.mountElbert.customItems.push({ item: itemName, note: note });
+        Store.all.mountElbert.customItems.push({ category: category, item: itemName, note: note });
         this.save();
       },
 
-      removeCustomItem: function (index) {
+      removeCustomItem: function (category, index) {
         initStore();
         if (Store.all.mountElbert.customItems) {
-          Store.all.mountElbert.customItems.splice(index, 1);
-          this.save();
+          var itemsInCat = Store.all.mountElbert.customItems.filter(function (item) {
+            return item.category === category;
+          });
+          if (index < itemsInCat.length) {
+            var itemToRemove = itemsInCat[index];
+            Store.all.mountElbert.customItems = Store.all.mountElbert.customItems.filter(function (item) {
+              return !(item.category === category && item.item === itemToRemove.item);
+            });
+            this.save();
+          }
         }
       },
 
@@ -106,7 +114,7 @@
           var itemsDiv = document.createElement('div');
           itemsDiv.style.display = 'flex';
           itemsDiv.style.flexDirection = 'column';
-          itemsDiv.style.gap = '16px';
+          itemsDiv.style.gap = '8px';
 
           cat.items.forEach(function (itemObj) {
             var itemDiv = document.createElement('div');
@@ -166,36 +174,21 @@
             itemsDiv.appendChild(itemDiv);
           });
 
-          catDiv.appendChild(itemsDiv);
-          contentDiv.appendChild(catDiv);
-        });
+          // Add custom item form for this category
+          var customItemsInCat = MountElbertPrep.getCustomItems().filter(function (item) {
+            return item.category === cat.name;
+          });
 
-        // Custom items section
-        var customItems = MountElbertPrep.getCustomItems();
-        if (customItems.length > 0) {
-          var customCatDiv = document.createElement('div');
-          customCatDiv.className = 'card';
-          customCatDiv.style.marginBottom = '16px';
-
-          var customTitle = document.createElement('h3');
-          customTitle.className = 'card__title';
-          customTitle.textContent = 'Additional Items';
-          customCatDiv.appendChild(customTitle);
-
-          var customItemsDiv = document.createElement('div');
-          customItemsDiv.style.display = 'flex';
-          customItemsDiv.style.flexDirection = 'column';
-          customItemsDiv.style.gap = '8px';
-
-          customItems.forEach(function (customItem, idx) {
+          customItemsInCat.forEach(function (customItem, idx) {
             var itemDiv = document.createElement('div');
             itemDiv.style.display = 'grid';
-            itemDiv.style.gridTemplateColumns = '1fr 30px';
+            itemDiv.style.gridTemplateColumns = '1fr 150px 30px';
             itemDiv.style.alignItems = 'center';
             itemDiv.style.gap = '12px';
             itemDiv.style.padding = '12px';
             itemDiv.style.borderBottom = '1px solid var(--border)';
             itemDiv.style.borderRadius = '4px';
+            itemDiv.style.opacity = '0.8';
 
             var itemInfo = document.createElement('div');
             itemInfo.style.display = 'flex';
@@ -205,6 +198,7 @@
             var itemName = document.createElement('div');
             itemName.style.fontWeight = '600';
             itemName.style.fontSize = '0.95em';
+            itemName.style.fontStyle = 'italic';
             itemName.textContent = customItem.item;
             itemInfo.appendChild(itemName);
 
@@ -218,6 +212,32 @@
 
             itemDiv.appendChild(itemInfo);
 
+            var neededSelect = document.createElement('select');
+            neededSelect.style.padding = '6px 8px';
+            neededSelect.style.borderRadius = '4px';
+            neededSelect.style.border = '1px solid var(--border)';
+            neededSelect.style.fontSize = '0.9em';
+            neededSelect.style.fontWeight = '500';
+
+            var yesOpt = document.createElement('option');
+            yesOpt.value = 'yes';
+            yesOpt.textContent = 'Yes, needed';
+            neededSelect.appendChild(yesOpt);
+
+            var noOpt = document.createElement('option');
+            noOpt.value = 'no';
+            noOpt.textContent = 'No, skip it';
+            neededSelect.appendChild(noOpt);
+
+            var currentNeeded = MountElbertPrep.getNeeded(cat.name, customItem.item);
+            neededSelect.value = currentNeeded;
+
+            neededSelect.addEventListener('change', function (e) {
+              MountElbertPrep.setNeeded(cat.name, customItem.item, e.target.value);
+            });
+
+            itemDiv.appendChild(neededSelect);
+
             var deleteBtn = document.createElement('button');
             deleteBtn.textContent = '✕';
             deleteBtn.style.padding = '4px 8px';
@@ -229,86 +249,64 @@
             deleteBtn.style.opacity = '0.6';
             deleteBtn.title = 'Remove item';
             deleteBtn.addEventListener('click', function () {
-              MountElbertPrep.removeCustomItem(idx);
+              MountElbertPrep.removeCustomItem(cat.name, idx);
             });
 
             itemDiv.appendChild(deleteBtn);
-            customItemsDiv.appendChild(itemDiv);
+            itemsDiv.appendChild(itemDiv);
           });
 
-          customCatDiv.appendChild(customItemsDiv);
-          contentDiv.appendChild(customCatDiv);
-        }
+          // Add custom item input for this category
+          var addRow = document.createElement('div');
+          addRow.style.display = 'grid';
+          addRow.style.gridTemplateColumns = '1fr 150px';
+          addRow.style.gap = '12px';
+          addRow.style.padding = '12px';
+          addRow.style.backgroundColor = 'var(--bg-muted)';
+          addRow.style.borderRadius = '4px';
+          addRow.style.marginTop = '8px';
 
-        // Add custom item form
-        var formCard = document.createElement('div');
-        formCard.className = 'card';
+          var addInput = document.createElement('input');
+          addInput.type = 'text';
+          addInput.placeholder = '+ Add custom item...';
+          addInput.style.padding = '6px 8px';
+          addInput.style.borderRadius = '4px';
+          addInput.style.border = '1px solid var(--border)';
+          addInput.style.fontSize = '0.9em';
 
-        var formTitle = document.createElement('h3');
-        formTitle.className = 'card__title';
-        formTitle.textContent = 'Add Custom Item';
-        formCard.appendChild(formTitle);
+          var addBtn = document.createElement('button');
+          addBtn.textContent = 'Add to category';
+          addBtn.style.padding = '6px 12px';
+          addBtn.style.borderRadius = '4px';
+          addBtn.style.border = 'none';
+          addBtn.style.backgroundColor = 'var(--series-1)';
+          addBtn.style.color = 'white';
+          addBtn.style.fontWeight = '500';
+          addBtn.style.cursor = 'pointer';
+          addBtn.style.fontSize = '0.85em';
 
-        var form = document.createElement('div');
-        form.style.display = 'grid';
-        form.style.gridTemplateColumns = '1fr 1fr auto';
-        form.style.gap = '12px';
-        form.style.alignItems = 'end';
+          addBtn.addEventListener('click', function () {
+            var itemName = addInput.value.trim();
+            if (itemName) {
+              MountElbertPrep.addCustomItem(cat.name, itemName, '');
+              addInput.value = '';
+            }
+          });
 
-        var nameLabel = document.createElement('label');
-        nameLabel.style.fontSize = '0.85em';
-        nameLabel.style.opacity = '0.8';
-        nameLabel.textContent = 'Item name';
-        form.appendChild(nameLabel);
+          addInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+              addBtn.click();
+            }
+          });
 
-        var nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.placeholder = 'e.g. Extra socks, hand warmers...';
-        nameInput.style.padding = '6px 8px';
-        nameInput.style.borderRadius = '4px';
-        nameInput.style.border = '1px solid var(--border)';
-        nameInput.style.fontSize = '0.9em';
-        nameInput.style.gridColumn = '1';
-        form.appendChild(nameInput);
+          addRow.appendChild(addInput);
+          addRow.appendChild(addBtn);
+          itemsDiv.appendChild(addRow);
 
-        var noteLabel = document.createElement('label');
-        noteLabel.style.fontSize = '0.85em';
-        noteLabel.style.opacity = '0.8';
-        noteLabel.textContent = 'Note (optional)';
-        form.appendChild(noteLabel);
-
-        var noteInput = document.createElement('input');
-        noteInput.type = 'text';
-        noteInput.placeholder = 'e.g. For wind protection';
-        noteInput.style.padding = '6px 8px';
-        noteInput.style.borderRadius = '4px';
-        noteInput.style.border = '1px solid var(--border)';
-        noteInput.style.fontSize = '0.9em';
-        noteInput.style.gridColumn = '2';
-        form.appendChild(noteInput);
-
-        var addBtn = document.createElement('button');
-        addBtn.textContent = 'Add';
-        addBtn.style.padding = '6px 16px';
-        addBtn.style.borderRadius = '4px';
-        addBtn.style.border = 'none';
-        addBtn.style.backgroundColor = 'var(--series-1)';
-        addBtn.style.color = 'white';
-        addBtn.style.fontWeight = '500';
-        addBtn.style.cursor = 'pointer';
-        addBtn.style.fontSize = '0.9em';
-        addBtn.addEventListener('click', function () {
-          var name = nameInput.value.trim();
-          if (name) {
-            MountElbertPrep.addCustomItem(name, noteInput.value.trim());
-            nameInput.value = '';
-            noteInput.value = '';
-          }
+          catDiv.appendChild(itemsDiv);
+          contentDiv.appendChild(catDiv);
         });
 
-        form.appendChild(addBtn);
-        formCard.appendChild(form);
-        contentDiv.appendChild(formCard);
       }
     };
   })();
