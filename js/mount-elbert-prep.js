@@ -101,12 +101,14 @@
             }
 
             var itemDiv = document.createElement('div');
-            itemDiv.style.display = 'flex';
+            itemDiv.style.display = 'grid';
+            itemDiv.style.gridTemplateColumns = '30px 1fr 100px 150px 120px';
             itemDiv.style.alignItems = 'center';
             itemDiv.style.gap = '12px';
-            itemDiv.style.padding = '8px';
+            itemDiv.style.padding = '10px';
             itemDiv.style.borderRadius = '4px';
             itemDiv.style.backgroundColor = isDone ? 'var(--bg-muted)' : 'transparent';
+            itemDiv.style.borderBottom = '1px solid var(--border)';
 
             // Checkbox
             var checkbox = document.createElement('input');
@@ -122,62 +124,77 @@
 
             // Item name
             var itemLabel = document.createElement('span');
-            itemLabel.style.flex = '1';
             itemLabel.style.fontSize = '0.95em';
             itemLabel.style.textDecoration = isDone ? 'line-through' : 'none';
             itemLabel.style.opacity = isDone ? '0.6' : '1';
             itemLabel.textContent = itemObj.item;
             itemDiv.appendChild(itemLabel);
 
-            // Status badges
-            var statusDiv = document.createElement('div');
-            statusDiv.style.display = 'flex';
-            statusDiv.style.gap = '8px';
-            statusDiv.style.alignItems = 'center';
+            // Status dropdown
+            var statusSelect = document.createElement('select');
+            statusSelect.style.padding = '4px 6px';
+            statusSelect.style.borderRadius = '4px';
+            statusSelect.style.border = '1px solid var(--border)';
+            statusSelect.style.fontSize = '0.85em';
+            statusSelect.style.fontWeight = '500';
+
+            var unassignedOpt = document.createElement('option');
+            unassignedOpt.value = 'unassigned';
+            unassignedOpt.textContent = 'Unassigned';
+            statusSelect.appendChild(unassignedOpt);
+
+            var assignedOpt = document.createElement('option');
+            assignedOpt.value = 'assigned';
+            assignedOpt.textContent = 'Assigned';
+            statusSelect.appendChild(assignedOpt);
+
+            var completedOpt = document.createElement('option');
+            completedOpt.value = 'completed';
+            completedOpt.textContent = 'Completed';
+            statusSelect.appendChild(completedOpt);
 
             if (isDone) {
-              var completedBadge = document.createElement('span');
-              completedBadge.style.padding = '2px 8px';
-              completedBadge.style.borderRadius = '12px';
-              completedBadge.style.fontSize = '0.85em';
-              completedBadge.style.fontWeight = '500';
-              completedBadge.style.backgroundColor = 'var(--series-3)';
-              completedBadge.style.color = 'white';
-              completedBadge.textContent = '✓ Completed';
-              statusDiv.appendChild(completedBadge);
-            } else if (assigneeName) {
-              var assignedBadge = document.createElement('span');
-              assignedBadge.style.padding = '2px 8px';
-              assignedBadge.style.borderRadius = '12px';
-              assignedBadge.style.fontSize = '0.85em';
-              assignedBadge.style.fontWeight = '500';
-              assignedBadge.style.backgroundColor = 'var(--series-1)';
-              assignedBadge.style.color = 'white';
-              assignedBadge.textContent = '→ ' + assigneeName;
-              statusDiv.appendChild(assignedBadge);
+              statusSelect.value = 'completed';
+            } else if (currentAssignee) {
+              statusSelect.value = 'assigned';
             } else {
-              var unassignedBadge = document.createElement('span');
-              unassignedBadge.style.padding = '2px 8px';
-              unassignedBadge.style.borderRadius = '12px';
-              unassignedBadge.style.fontSize = '0.85em';
-              unassignedBadge.style.opacity = '0.6';
-              unassignedBadge.textContent = 'Unassigned';
-              statusDiv.appendChild(unassignedBadge);
+              statusSelect.value = 'unassigned';
             }
 
-            itemDiv.appendChild(statusDiv);
+            statusSelect.addEventListener('change', function (e) {
+              if (e.target.value === 'completed') {
+                if (!isDone) MountElbertPrep.toggleItem(section.name, itemObj.item);
+              } else if (e.target.value === 'unassigned') {
+                if (isDone) MountElbertPrep.toggleItem(section.name, itemObj.item);
+                if (currentAssignee) MountElbertPrep.setAssignee(section.name, itemObj.item, null);
+              }
+            });
+
+            itemDiv.appendChild(statusSelect);
+
+            // Assigned to display
+            var assignedDiv = document.createElement('div');
+            assignedDiv.style.fontSize = '0.9em';
+            assignedDiv.style.fontWeight = '500';
+            if (assigneeName) {
+              assignedDiv.textContent = assigneeName;
+              assignedDiv.style.color = 'var(--series-1)';
+            } else {
+              assignedDiv.textContent = '—';
+              assignedDiv.style.opacity = '0.5';
+            }
+            itemDiv.appendChild(assignedDiv);
 
             // Assignee dropdown
             var assigneeSelect = document.createElement('select');
-            assigneeSelect.style.padding = '4px 8px';
+            assigneeSelect.style.padding = '4px 6px';
             assigneeSelect.style.borderRadius = '4px';
             assigneeSelect.style.border = '1px solid var(--border)';
-            assigneeSelect.style.fontSize = '0.9em';
-            assigneeSelect.style.minWidth = '120px';
+            assigneeSelect.style.fontSize = '0.85em';
 
             var nooneOption = document.createElement('option');
             nooneOption.value = '';
-            nooneOption.textContent = '— unassigned';
+            nooneOption.textContent = '—';
             assigneeSelect.appendChild(nooneOption);
 
             CFG.team.forEach(function (person) {
@@ -195,6 +212,27 @@
             itemDiv.appendChild(assigneeSelect);
             itemsDiv.appendChild(itemDiv);
           });
+
+          // Add header row
+          var headerDiv = document.createElement('div');
+          headerDiv.style.display = 'grid';
+          headerDiv.style.gridTemplateColumns = '30px 1fr 100px 150px 120px';
+          headerDiv.style.gap = '12px';
+          headerDiv.style.padding = '8px 10px';
+          headerDiv.style.fontWeight = '600';
+          headerDiv.style.fontSize = '0.85em';
+          headerDiv.style.opacity = '0.7';
+          headerDiv.style.borderBottom = '2px solid var(--border)';
+          headerDiv.style.marginBottom = '8px';
+
+          var headers = ['', 'Item', 'Status', 'Assigned to', 'Change'];
+          headers.forEach(function (h) {
+            var th = document.createElement('span');
+            th.textContent = h;
+            headerDiv.appendChild(th);
+          });
+
+          itemsDiv.insertBefore(headerDiv, itemsDiv.firstChild);
 
           sectionDiv.appendChild(itemsDiv);
           contentDiv.appendChild(sectionDiv);
