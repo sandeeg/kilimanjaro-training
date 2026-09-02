@@ -70,14 +70,25 @@
 
       render: function () {
         var contentDiv = document.getElementById('elbertChecklistContent');
-        if (!contentDiv) return;
-
-        var GEAR = window.MOUNT_ELBERT_GEAR;
-        if (!GEAR || !GEAR.categories) {
-          contentDiv.innerHTML = '<p>Gear data not loaded yet.</p>';
+        if (!contentDiv) {
+          console.log('elbertChecklistContent div not found');
           return;
         }
 
+        var GEAR = window.MOUNT_ELBERT_GEAR;
+        if (!GEAR) {
+          console.log('MOUNT_ELBERT_GEAR not defined');
+          contentDiv.innerHTML = '<p style="color: red;">Mount Elbert gear data not loaded.</p>';
+          return;
+        }
+
+        if (!GEAR.categories) {
+          console.log('GEAR.categories not defined');
+          contentDiv.innerHTML = '<p style="color: red;">Gear categories not found.</p>';
+          return;
+        }
+
+        console.log('Rendering Mount Elbert with ' + GEAR.categories.length + ' categories');
         initStore();
         contentDiv.innerHTML = '';
 
