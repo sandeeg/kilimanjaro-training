@@ -20,7 +20,7 @@ var Store = (function () {
     garmin:   {},   // "p1": { units, importedAt, activities:[] }
     extraLog: [],   // hikes added from a Garmin import, outside the plan
     recommendations: {}, // "Footwear::Trekking boots (…)::p1": "Salomon" — gear recommendations per person
-    mountElbert: { items: {}, assignees: {} } // Mount Elbert prep checklist: items & assignees
+    mountElbert: { gear: {}, needed: {} } // Mount Elbert gear: recommendations & needed status
   };
 
   function read() {

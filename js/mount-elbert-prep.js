@@ -1,70 +1,71 @@
 /* ============================================================================
-   mount-elbert-prep.js — Mount Elbert collaborative checklist
+   mount-elbert-prep.js — Mount Elbert gear checklist
    ========================================================================== */
 
 (function () {
 
   var CFG = window.TREK_CONFIG;
-  var CHECKLIST = window.MOUNT_ELBERT_CHECKLIST;
+  var GEAR = window.MOUNT_ELBERT_GEAR;
 
   var MountElbertPrep = (function () {
 
-    function itemKey(sectionName, itemName) {
-      return sectionName + '::' + itemName;
+    function gearKey(category, item, personId) {
+      return category + '::' + item + '::' + personId;
     }
 
-    function assigneeKey(sectionName, itemName) {
-      return sectionName + '::' + itemName + '::assignee';
+    function neededKey(category, item, personId) {
+      return category + '::' + item + '::' + personId + '::needed';
     }
 
     function initStore() {
       if (!Store.all.mountElbert) {
         Store.all.mountElbert = {
-          items: {},     // "section::item": { done: bool }
-          assignees: {}  // "section::item::assignee": "p1"
+          gear: {},     // "category::item::personId": "recommendation text"
+          needed: {}    // "category::item::personId::needed": "yes" or "no"
         };
       }
     }
 
     return {
-      toggleItem: function (sectionName, itemName) {
+      getRecommendation: function (category, item, personId) {
         initStore();
-        var key = itemKey(sectionName, itemName);
-        if (!Store.all.mountElbert.items[key]) {
-          Store.all.mountElbert.items[key] = {};
-        }
-        Store.all.mountElbert.items[key].done = !Store.all.mountElbert.items[key].done;
-        this.save();
+        return Store.all.mountElbert.gear[gearKey(category, item, personId)] || '';
       },
 
-      isDone: function (sectionName, itemName) {
+      setRecommendation: function (category, item, personId, value) {
         initStore();
-        var key = itemKey(sectionName, itemName);
-        return !!(Store.all.mountElbert.items[key] && Store.all.mountElbert.items[key].done);
-      },
-
-      setAssignee: function (sectionName, itemName, personId) {
-        initStore();
-        var key = assigneeKey(sectionName, itemName);
-        if (personId) {
-          Store.all.mountElbert.assignees[key] = personId;
+        var k = gearKey(category, item, personId);
+        var v = String(value || '').trim();
+        if (v) {
+          Store.all.mountElbert.gear[k] = v;
         } else {
-          delete Store.all.mountElbert.assignees[key];
+          delete Store.all.mountElbert.gear[k];
         }
         this.save();
       },
 
-      getAssignee: function (sectionName, itemName) {
+      getNeeded: function (category, item, personId) {
         initStore();
-        var key = assigneeKey(sectionName, itemName);
-        return Store.all.mountElbert.assignees[key] || null;
+        var k = neededKey(category, item, personId);
+        return Store.all.mountElbert.needed[k] || 'yes'; // default to needed
+      },
+
+      setNeeded: function (category, item, personId, needed) {
+        initStore();
+        var k = neededKey(category, item, personId);
+        if (needed === 'yes' || needed === true) {
+          Store.all.mountElbert.needed[k] = 'yes';
+        } else {
+          Store.all.mountElbert.needed[k] = 'no';
+        }
+        this.save();
       },
 
       save: function () {
         try {
           localStorage.setItem('kili-training-v1', JSON.stringify(Store.all));
         } catch (e) {
-          console.warn('Could not save Mount Elbert prep.', e);
+          console.warn('Could not save Mount Elbert gear.', e);
         }
       },
 
@@ -75,167 +76,140 @@
         initStore();
         contentDiv.innerHTML = '';
 
-        CHECKLIST.sections.forEach(function (section) {
-          var sectionDiv = document.createElement('div');
-          sectionDiv.className = 'card';
-          sectionDiv.style.marginBottom = '16px';
+        GEAR.categories.forEach(function (cat) {
+          var catDiv = document.createElement('div');
+          catDiv.className = 'card';
+          catDiv.style.marginBottom = '16px';
 
           var title = document.createElement('h3');
           title.className = 'card__title';
-          title.textContent = section.name;
-          sectionDiv.appendChild(title);
+          title.textContent = cat.name;
+          catDiv.appendChild(title);
 
           var itemsDiv = document.createElement('div');
           itemsDiv.style.display = 'flex';
           itemsDiv.style.flexDirection = 'column';
-          itemsDiv.style.gap = '12px';
+          itemsDiv.style.gap = '16px';
 
-          section.items.forEach(function (itemObj) {
-            var isDone = MountElbertPrep.isDone(section.name, itemObj.item);
-            var currentAssignee = MountElbertPrep.getAssignee(section.name, itemObj.item);
-            var assigneeName = null;
-
-            if (currentAssignee) {
-              var assigneeObj = CFG.team.filter(function (p) { return p.id === currentAssignee; })[0];
-              assigneeName = assigneeObj ? assigneeObj.name : null;
-            }
-
+          cat.items.forEach(function (itemObj) {
             var itemDiv = document.createElement('div');
-            itemDiv.style.display = 'grid';
-            itemDiv.style.gridTemplateColumns = '30px 1fr 100px 150px 120px';
-            itemDiv.style.alignItems = 'center';
-            itemDiv.style.gap = '12px';
-            itemDiv.style.padding = '10px';
-            itemDiv.style.borderRadius = '4px';
-            itemDiv.style.backgroundColor = isDone ? 'var(--bg-muted)' : 'transparent';
             itemDiv.style.borderBottom = '1px solid var(--border)';
+            itemDiv.style.paddingBottom = '16px';
+            itemDiv.style.marginBottom = '16px';
 
-            // Checkbox
-            var checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = isDone;
-            checkbox.style.width = '20px';
-            checkbox.style.height = '20px';
-            checkbox.style.cursor = 'pointer';
-            checkbox.addEventListener('change', function () {
-              MountElbertPrep.toggleItem(section.name, itemObj.item);
-            });
-            itemDiv.appendChild(checkbox);
+            var itemHeader = document.createElement('div');
+            itemHeader.style.marginBottom = '12px';
 
-            // Item name
-            var itemLabel = document.createElement('span');
-            itemLabel.style.fontSize = '0.95em';
-            itemLabel.style.textDecoration = isDone ? 'line-through' : 'none';
-            itemLabel.style.opacity = isDone ? '0.6' : '1';
-            itemLabel.textContent = itemObj.item;
-            itemDiv.appendChild(itemLabel);
+            var itemName = document.createElement('div');
+            itemName.style.fontWeight = '600';
+            itemName.style.fontSize = '0.95em';
+            itemName.textContent = itemObj.item;
+            itemHeader.appendChild(itemName);
 
-            // Status dropdown
-            var statusSelect = document.createElement('select');
-            statusSelect.style.padding = '4px 6px';
-            statusSelect.style.borderRadius = '4px';
-            statusSelect.style.border = '1px solid var(--border)';
-            statusSelect.style.fontSize = '0.85em';
-            statusSelect.style.fontWeight = '500';
+            var itemNote = document.createElement('div');
+            itemNote.style.fontSize = '0.8em';
+            itemNote.style.opacity = '0.7';
+            itemNote.style.marginTop = '2px';
+            itemNote.textContent = itemObj.note;
+            itemHeader.appendChild(itemNote);
 
-            var unassignedOpt = document.createElement('option');
-            unassignedOpt.value = 'unassigned';
-            unassignedOpt.textContent = 'Unassigned';
-            statusSelect.appendChild(unassignedOpt);
+            itemDiv.appendChild(itemHeader);
 
-            var assignedOpt = document.createElement('option');
-            assignedOpt.value = 'assigned';
-            assignedOpt.textContent = 'Assigned';
-            statusSelect.appendChild(assignedOpt);
-
-            var completedOpt = document.createElement('option');
-            completedOpt.value = 'completed';
-            completedOpt.textContent = 'Completed';
-            statusSelect.appendChild(completedOpt);
-
-            if (isDone) {
-              statusSelect.value = 'completed';
-            } else if (currentAssignee) {
-              statusSelect.value = 'assigned';
-            } else {
-              statusSelect.value = 'unassigned';
-            }
-
-            statusSelect.addEventListener('change', function (e) {
-              if (e.target.value === 'completed') {
-                if (!isDone) MountElbertPrep.toggleItem(section.name, itemObj.item);
-              } else if (e.target.value === 'unassigned') {
-                if (isDone) MountElbertPrep.toggleItem(section.name, itemObj.item);
-                if (currentAssignee) MountElbertPrep.setAssignee(section.name, itemObj.item, null);
-              }
-            });
-
-            itemDiv.appendChild(statusSelect);
-
-            // Assigned to display
-            var assignedDiv = document.createElement('div');
-            assignedDiv.style.fontSize = '0.9em';
-            assignedDiv.style.fontWeight = '500';
-            if (assigneeName) {
-              assignedDiv.textContent = assigneeName;
-              assignedDiv.style.color = 'var(--series-1)';
-            } else {
-              assignedDiv.textContent = '—';
-              assignedDiv.style.opacity = '0.5';
-            }
-            itemDiv.appendChild(assignedDiv);
-
-            // Assignee dropdown
-            var assigneeSelect = document.createElement('select');
-            assigneeSelect.style.padding = '4px 6px';
-            assigneeSelect.style.borderRadius = '4px';
-            assigneeSelect.style.border = '1px solid var(--border)';
-            assigneeSelect.style.fontSize = '0.85em';
-
-            var nooneOption = document.createElement('option');
-            nooneOption.value = '';
-            nooneOption.textContent = '—';
-            assigneeSelect.appendChild(nooneOption);
+            var personsGrid = document.createElement('div');
+            personsGrid.style.display = 'grid';
+            personsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))';
+            personsGrid.style.gap = '16px';
 
             CFG.team.forEach(function (person) {
-              var option = document.createElement('option');
-              option.value = person.id;
-              option.textContent = person.name;
-              if (currentAssignee === person.id) option.selected = true;
-              assigneeSelect.appendChild(option);
+              var personField = document.createElement('div');
+              personField.style.display = 'flex';
+              personField.style.flexDirection = 'column';
+              personField.style.gap = '8px';
+              personField.style.padding = '12px';
+              personField.style.borderRadius = '4px';
+              personField.style.backgroundColor = 'var(--bg-muted)';
+
+              var label = document.createElement('label');
+              label.style.fontSize = '0.85em';
+              label.style.fontWeight = '600';
+              label.style.opacity = '0.9';
+              label.textContent = person.name;
+              personField.appendChild(label);
+
+              // Needed/Not Needed status
+              var neededContainer = document.createElement('div');
+              neededContainer.style.display = 'flex';
+              neededContainer.style.gap = '8px';
+              neededContainer.style.alignItems = 'center';
+
+              var neededLabel = document.createElement('label');
+              neededLabel.style.fontSize = '0.75em';
+              neededLabel.style.opacity = '0.7';
+              neededLabel.style.textTransform = 'uppercase';
+              neededLabel.style.letterSpacing = '0.5px';
+              neededLabel.textContent = 'Need it:';
+              neededContainer.appendChild(neededLabel);
+
+              var neededSelect = document.createElement('select');
+              neededSelect.style.padding = '4px 8px';
+              neededSelect.style.borderRadius = '3px';
+              neededSelect.style.border = '1px solid var(--border)';
+              neededSelect.style.fontSize = '0.85em';
+              neededSelect.style.minWidth = '110px';
+
+              var yesOpt = document.createElement('option');
+              yesOpt.value = 'yes';
+              yesOpt.textContent = 'Yes, needed';
+              neededSelect.appendChild(yesOpt);
+
+              var noOpt = document.createElement('option');
+              noOpt.value = 'no';
+              noOpt.textContent = 'No, skip it';
+              neededSelect.appendChild(noOpt);
+
+              var currentNeeded = MountElbertPrep.getNeeded(cat.name, itemObj.item, person.id);
+              neededSelect.value = currentNeeded;
+
+              neededSelect.addEventListener('change', function (e) {
+                MountElbertPrep.setNeeded(cat.name, itemObj.item, person.id, e.target.value);
+              });
+
+              neededContainer.appendChild(neededSelect);
+              personField.appendChild(neededContainer);
+
+              var recLabel = document.createElement('label');
+              recLabel.style.fontSize = '0.75em';
+              recLabel.style.opacity = '0.7';
+              recLabel.style.textTransform = 'uppercase';
+              recLabel.style.letterSpacing = '0.5px';
+              recLabel.textContent = 'Brand / Recommendation';
+              personField.appendChild(recLabel);
+
+              var input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'e.g. Salomon, REI Co-op...';
+              input.style.padding = '6px 8px';
+              input.style.borderRadius = '4px';
+              input.style.border = '1px solid var(--border)';
+              input.style.fontSize = '0.9em';
+
+              var currentRec = MountElbertPrep.getRecommendation(cat.name, itemObj.item, person.id);
+              input.value = currentRec;
+
+              input.addEventListener('input', function (e) {
+                MountElbertPrep.setRecommendation(cat.name, itemObj.item, person.id, e.target.value);
+              });
+
+              personField.appendChild(input);
+              personsGrid.appendChild(personField);
             });
 
-            assigneeSelect.addEventListener('change', function (e) {
-              MountElbertPrep.setAssignee(section.name, itemObj.item, e.target.value || null);
-            });
-
-            itemDiv.appendChild(assigneeSelect);
+            itemDiv.appendChild(personsGrid);
             itemsDiv.appendChild(itemDiv);
           });
 
-          // Add header row
-          var headerDiv = document.createElement('div');
-          headerDiv.style.display = 'grid';
-          headerDiv.style.gridTemplateColumns = '30px 1fr 100px 150px 120px';
-          headerDiv.style.gap = '12px';
-          headerDiv.style.padding = '8px 10px';
-          headerDiv.style.fontWeight = '600';
-          headerDiv.style.fontSize = '0.85em';
-          headerDiv.style.opacity = '0.7';
-          headerDiv.style.borderBottom = '2px solid var(--border)';
-          headerDiv.style.marginBottom = '8px';
-
-          var headers = ['', 'Item', 'Status', 'Assigned to', 'Change'];
-          headers.forEach(function (h) {
-            var th = document.createElement('span');
-            th.textContent = h;
-            headerDiv.appendChild(th);
-          });
-
-          itemsDiv.insertBefore(headerDiv, itemsDiv.firstChild);
-
-          sectionDiv.appendChild(itemsDiv);
-          contentDiv.appendChild(sectionDiv);
+          catDiv.appendChild(itemsDiv);
+          contentDiv.appendChild(catDiv);
         });
       }
     };
