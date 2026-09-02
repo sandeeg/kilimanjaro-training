@@ -1292,6 +1292,7 @@
     renderCalendar();
     renderHikes();
     renderPacking();
+    Recommendations.render();
     renderItinerary();
     renderFlights();
     renderHotels();
@@ -1324,6 +1325,7 @@
       renderCalendar();
       renderHikes();
       renderPacking();
+      Recommendations.render();
       renderFlights();
       renderHotels();
       CFG.team.forEach(function (p) { rebuildPreview(p.id); });

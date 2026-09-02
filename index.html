@@ -35,6 +35,7 @@
     <button class="tab" role="tab" id="tab-calendar"  aria-controls="panel-calendar"  aria-selected="false">Training calendar</button>
     <button class="tab" role="tab" id="tab-hikes"     aria-controls="panel-hikes"     aria-selected="false">Hike library</button>
     <button class="tab" role="tab" id="tab-packing"   aria-controls="panel-packing"   aria-selected="false">Packing list</button>
+    <button class="tab" role="tab" id="tab-recommendations" aria-controls="panel-recommendations" aria-selected="false">Recommendations</button>
     <button class="tab" role="tab" id="tab-garmin"    aria-controls="panel-garmin"    aria-selected="false">Garmin</button>
     <button class="tab" role="tab" id="tab-itinerary" aria-controls="panel-itinerary" aria-selected="false">The trek</button>
   </nav>
@@ -234,6 +235,16 @@
     </div>
   </section>
 
+  <!-- ================= RECOMMENDATIONS ================= -->
+  <section class="panel" id="panel-recommendations" role="tabpanel" aria-labelledby="tab-recommendations" hidden>
+    <div class="section-head">
+      <h2>Gear recommendations</h2>
+      <p>Help each other choose brands and gear. Add your recommendation (or brand suggestions) in the text field next to each item.</p>
+    </div>
+
+    <div id="recContent"></div>
+  </section>
+
   <!-- ================= GARMIN ================= -->
   <section class="panel" id="panel-garmin" role="tabpanel" aria-labelledby="tab-garmin" hidden>
     <div class="section-head">
@@ -316,6 +327,7 @@
 <script src="js/schedule.js"></script>
 <script src="js/chart.js"></script>
 <script src="js/garmin.js"></script>
+<script src="js/recommendations.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

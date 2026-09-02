@@ -18,7 +18,8 @@ var Store = (function () {
     pnrs:     {},   // "seaIst": "ABC123" — see setPnr
     hotels:   {},   // "istanbul": "92736632" — hotel confirmation refs, kept locally
     garmin:   {},   // "p1": { units, importedAt, activities:[] }
-    extraLog: []    // hikes added from a Garmin import, outside the plan
+    extraLog: [],   // hikes added from a Garmin import, outside the plan
+    recommendations: {} // "Footwear::Trekking boots (…)::p1": "Salomon" — gear recommendations per person
   };
 
   function read() {
