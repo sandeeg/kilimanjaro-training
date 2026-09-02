@@ -23,7 +23,7 @@ window.MOUNT_ELBERT_GEAR = {
     {
       name: "Layers & Weather Protection",
       items: [
-        { item: "Base layer (thermal underwear)", note: "Long-sleeve + pants" },
+        { item: "Merino Wool t-shirt", note: "Long-sleeve, moisture-wicking" },
         { item: "Mid layer (fleece jacket)", note: "Warmth without bulk" },
         { item: "Down jacket", note: "Peak gets cold at 14,440 ft even on day hike" },
         { item: "Rain jacket (hardshell, waterproof)", note: "Afternoon thunderstorms" },

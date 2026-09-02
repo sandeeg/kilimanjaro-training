@@ -39,6 +39,28 @@
         this.save();
       },
 
+      addCustomItem: function (itemName, note) {
+        initStore();
+        if (!Store.all.mountElbert.customItems) {
+          Store.all.mountElbert.customItems = [];
+        }
+        Store.all.mountElbert.customItems.push({ item: itemName, note: note });
+        this.save();
+      },
+
+      removeCustomItem: function (index) {
+        initStore();
+        if (Store.all.mountElbert.customItems) {
+          Store.all.mountElbert.customItems.splice(index, 1);
+          this.save();
+        }
+      },
+
+      getCustomItems: function () {
+        initStore();
+        return Store.all.mountElbert.customItems || [];
+      },
+
       save: function () {
         try {
           localStorage.setItem('kili-training-v1', JSON.stringify(Store.all));
@@ -147,6 +169,146 @@
           catDiv.appendChild(itemsDiv);
           contentDiv.appendChild(catDiv);
         });
+
+        // Custom items section
+        var customItems = MountElbertPrep.getCustomItems();
+        if (customItems.length > 0) {
+          var customCatDiv = document.createElement('div');
+          customCatDiv.className = 'card';
+          customCatDiv.style.marginBottom = '16px';
+
+          var customTitle = document.createElement('h3');
+          customTitle.className = 'card__title';
+          customTitle.textContent = 'Additional Items';
+          customCatDiv.appendChild(customTitle);
+
+          var customItemsDiv = document.createElement('div');
+          customItemsDiv.style.display = 'flex';
+          customItemsDiv.style.flexDirection = 'column';
+          customItemsDiv.style.gap = '8px';
+
+          customItems.forEach(function (customItem, idx) {
+            var itemDiv = document.createElement('div');
+            itemDiv.style.display = 'grid';
+            itemDiv.style.gridTemplateColumns = '1fr 30px';
+            itemDiv.style.alignItems = 'center';
+            itemDiv.style.gap = '12px';
+            itemDiv.style.padding = '12px';
+            itemDiv.style.borderBottom = '1px solid var(--border)';
+            itemDiv.style.borderRadius = '4px';
+
+            var itemInfo = document.createElement('div');
+            itemInfo.style.display = 'flex';
+            itemInfo.style.flexDirection = 'column';
+            itemInfo.style.gap = '2px';
+
+            var itemName = document.createElement('div');
+            itemName.style.fontWeight = '600';
+            itemName.style.fontSize = '0.95em';
+            itemName.textContent = customItem.item;
+            itemInfo.appendChild(itemName);
+
+            if (customItem.note) {
+              var itemNote = document.createElement('div');
+              itemNote.style.fontSize = '0.8em';
+              itemNote.style.opacity = '0.7';
+              itemNote.textContent = customItem.note;
+              itemInfo.appendChild(itemNote);
+            }
+
+            itemDiv.appendChild(itemInfo);
+
+            var deleteBtn = document.createElement('button');
+            deleteBtn.textContent = '✕';
+            deleteBtn.style.padding = '4px 8px';
+            deleteBtn.style.borderRadius = '4px';
+            deleteBtn.style.border = '1px solid var(--border)';
+            deleteBtn.style.backgroundColor = 'transparent';
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.style.fontSize = '1em';
+            deleteBtn.style.opacity = '0.6';
+            deleteBtn.title = 'Remove item';
+            deleteBtn.addEventListener('click', function () {
+              MountElbertPrep.removeCustomItem(idx);
+            });
+
+            itemDiv.appendChild(deleteBtn);
+            customItemsDiv.appendChild(itemDiv);
+          });
+
+          customCatDiv.appendChild(customItemsDiv);
+          contentDiv.appendChild(customCatDiv);
+        }
+
+        // Add custom item form
+        var formCard = document.createElement('div');
+        formCard.className = 'card';
+
+        var formTitle = document.createElement('h3');
+        formTitle.className = 'card__title';
+        formTitle.textContent = 'Add Custom Item';
+        formCard.appendChild(formTitle);
+
+        var form = document.createElement('div');
+        form.style.display = 'grid';
+        form.style.gridTemplateColumns = '1fr 1fr auto';
+        form.style.gap = '12px';
+        form.style.alignItems = 'end';
+
+        var nameLabel = document.createElement('label');
+        nameLabel.style.fontSize = '0.85em';
+        nameLabel.style.opacity = '0.8';
+        nameLabel.textContent = 'Item name';
+        form.appendChild(nameLabel);
+
+        var nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'e.g. Extra socks, hand warmers...';
+        nameInput.style.padding = '6px 8px';
+        nameInput.style.borderRadius = '4px';
+        nameInput.style.border = '1px solid var(--border)';
+        nameInput.style.fontSize = '0.9em';
+        nameInput.style.gridColumn = '1';
+        form.appendChild(nameInput);
+
+        var noteLabel = document.createElement('label');
+        noteLabel.style.fontSize = '0.85em';
+        noteLabel.style.opacity = '0.8';
+        noteLabel.textContent = 'Note (optional)';
+        form.appendChild(noteLabel);
+
+        var noteInput = document.createElement('input');
+        noteInput.type = 'text';
+        noteInput.placeholder = 'e.g. For wind protection';
+        noteInput.style.padding = '6px 8px';
+        noteInput.style.borderRadius = '4px';
+        noteInput.style.border = '1px solid var(--border)';
+        noteInput.style.fontSize = '0.9em';
+        noteInput.style.gridColumn = '2';
+        form.appendChild(noteInput);
+
+        var addBtn = document.createElement('button');
+        addBtn.textContent = 'Add';
+        addBtn.style.padding = '6px 16px';
+        addBtn.style.borderRadius = '4px';
+        addBtn.style.border = 'none';
+        addBtn.style.backgroundColor = 'var(--series-1)';
+        addBtn.style.color = 'white';
+        addBtn.style.fontWeight = '500';
+        addBtn.style.cursor = 'pointer';
+        addBtn.style.fontSize = '0.9em';
+        addBtn.addEventListener('click', function () {
+          var name = nameInput.value.trim();
+          if (name) {
+            MountElbertPrep.addCustomItem(name, noteInput.value.trim());
+            nameInput.value = '';
+            noteInput.value = '';
+          }
+        });
+
+        form.appendChild(addBtn);
+        formCard.appendChild(form);
+        contentDiv.appendChild(formCard);
       }
     };
   })();
