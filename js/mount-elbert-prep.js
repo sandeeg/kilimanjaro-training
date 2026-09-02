@@ -8,10 +8,6 @@
 
   var MountElbertPrep = (function () {
 
-    function gearKey(category, item, personId) {
-      return category + '::' + item + '::' + personId;
-    }
-
     function neededKey(category, item, personId) {
       return category + '::' + item + '::' + personId + '::needed';
     }
@@ -26,23 +22,6 @@
     }
 
     return {
-      getRecommendation: function (category, item, personId) {
-        initStore();
-        return Store.all.mountElbert.gear[gearKey(category, item, personId)] || '';
-      },
-
-      setRecommendation: function (category, item, personId, value) {
-        initStore();
-        var k = gearKey(category, item, personId);
-        var v = String(value || '').trim();
-        if (v) {
-          Store.all.mountElbert.gear[k] = v;
-        } else {
-          delete Store.all.mountElbert.gear[k];
-        }
-        this.save();
-      },
-
       getNeeded: function (category, item, personId) {
         initStore();
         var k = neededKey(category, item, personId);
@@ -193,30 +172,6 @@
               neededContainer.appendChild(neededSelect);
               personField.appendChild(neededContainer);
 
-              var recLabel = document.createElement('label');
-              recLabel.style.fontSize = '0.75em';
-              recLabel.style.opacity = '0.7';
-              recLabel.style.textTransform = 'uppercase';
-              recLabel.style.letterSpacing = '0.5px';
-              recLabel.textContent = 'Brand / Recommendation';
-              personField.appendChild(recLabel);
-
-              var input = document.createElement('input');
-              input.type = 'text';
-              input.placeholder = 'e.g. Salomon, REI Co-op...';
-              input.style.padding = '6px 8px';
-              input.style.borderRadius = '4px';
-              input.style.border = '1px solid var(--border)';
-              input.style.fontSize = '0.9em';
-
-              var currentRec = MountElbertPrep.getRecommendation(cat.name, itemObj.item, person.id);
-              input.value = currentRec;
-
-              input.addEventListener('input', function (e) {
-                MountElbertPrep.setRecommendation(cat.name, itemObj.item, person.id, e.target.value);
-              });
-
-              personField.appendChild(input);
               personsGrid.appendChild(personField);
             });
 
