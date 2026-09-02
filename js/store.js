@@ -19,7 +19,8 @@ var Store = (function () {
     hotels:   {},   // "istanbul": "92736632" — hotel confirmation refs, kept locally
     garmin:   {},   // "p1": { units, importedAt, activities:[] }
     extraLog: [],   // hikes added from a Garmin import, outside the plan
-    recommendations: {} // "Footwear::Trekking boots (…)::p1": "Salomon" — gear recommendations per person
+    recommendations: {}, // "Footwear::Trekking boots (…)::p1": "Salomon" — gear recommendations per person
+    mountElbert: { items: {}, assignees: {} } // Mount Elbert prep checklist: items & assignees
   };
 
   function read() {

@@ -1293,6 +1293,7 @@
     renderHikes();
     renderPacking();
     Recommendations.render();
+    MountElbertPrep.render();
     renderItinerary();
     renderFlights();
     renderHotels();
@@ -1326,6 +1327,7 @@
       renderHikes();
       renderPacking();
       Recommendations.render();
+      MountElbertPrep.render();
       renderFlights();
       renderHotels();
       CFG.team.forEach(function (p) { rebuildPreview(p.id); });
